@@ -1,0 +1,10 @@
+@layer base { html, body { margin: 0; padding: 0; background-color: #050508; color: #ffffff; } body { overscroll-behavior: none; } }
+        ::-webkit-scrollbar { display: none; }
+        .neon-glow { box-shadow: 0 0 25px rgba(0, 255, 102, 0.3); }
+        .neon-border { border: 1px solid rgba(0, 255, 102, 0.4); }
+        @keyframes floatParticles {
+            0% { transform: translateY(0px) scale(1); opacity: 0.3; }
+            50% { transform: translateY(-15px) scale(1.2); opacity: 0.7; }
+            100% { transform: translateY(0px) scale(1); opacity: 0.3; }
+        }
+        .particle { animation: floatParticles 4s ease-in-out infinite; }
