@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>CELLZONE IMPORTADOS - Tucumán & Santiago</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet"/>
+    <!-- Supabase JS Client para Autenticación con Google -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @layer base { html, body { margin: 0; padding: 0; background-color: #050508; color: #ffffff; } body { overscroll-behavior: none; } }
+        ::-webkit-scrollbar { display: none; }
+        .neon-glow { box-shadow: 0 0 25px rgba(0, 255, 102, 0.3); }
+        .neon-border { border: 1px solid rgba(0, 255, 102, 0.4); }
+        @keyframes floatParticles {
+            0% { transform: translateY(0px) scale(1); opacity: 0.3; }
+            50% { transform: translateY(-15px) scale(1.2); opacity: 0.7; }
+            100% { transform: translateY(0px) scale(1); opacity: 0.3; }
+        }
+        .particle { animation: floatParticles 4s ease-in-out infinite; }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "neon-green": "#00FF66",
+                        "dark-bg": "#050508",
+                        "card-bg": "#0f131f",
+                        "card-border": "#1a2235"
+                    }
+                }
+            }
+        }
+    </script>
+<script>
+window.onerror = function(msg, url, lineNo, columnNo, error) {
+    alert("ERROR JS: " + msg + "\nLínea: " + lineNo);
+    return false;
+};
+window.onunhandledrejection = function(event) {
+    alert("PROMESA FALLIDA: " + (event.reason ? event.reason.message : "Error en Supabase"));
+};
+</script>
+</head>
+<body class="font-sans antialiased selection:bg-neon-green selection:text-black">
+    
+    <!-- Header Principal -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-dark-bg/90 backdrop-blur-md border-b border-card-border">
+        <div class="h-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+            <a onclick="irAInicio()" class="flex items-center gap-3 group" href="#">
+                <div class="w-10 h-10 rounded-xl bg-neon-green flex items-center justify-center text-black font-extrabold shadow-[0_0_15px_rgba(0,255,102,0.5)]">
+                    <span class="material-symbols-outlined text-[24px] font-bold">bolt</span>
+                </div>
+                <div class="flex flex-col">
+                    <span class="text-xl font-extrabold tracking-wider text-white">CELL<span class="text-neon-green">ZONE</span></span>
+                    <span class="text-[9px] tracking-widest text-gray-400 uppercase font-semibold">Tucumán & Santiago</span>
+                </div>
+            </a>
+
+            <!-- Botones de Google Login y Carrito -->
+            <div class="flex items-center gap-3">
+                <div id="authContainer">
+                    <button onclick="loginConGoogle()" class="px-3.5 py-2 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px] text-neon-green">account_circle</span>
+                        <span class="hidden sm:inline">Ingresar con Google</span>
+                    </button>
+                </div>
+                <button aria-label="Ver carrito" onclick="toggleCartDrawer(true)" class="relative p-3 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white transition-all flex items-center justify-center cursor-pointer" type="button">
+                    <span class="material-symbols-outlined text-[22px] text-neon-green">shopping_bag</span>
+                    <span id="headerCartCount" class="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1 rounded-full bg-neon-green text-black font-extrabold text-[11px] flex items-center justify-center shadow-md">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="w-full pt-20 bg-dark-bg min-h-screen">
+        
+        <!-- Hero Banner Animado -->
+        <section class="relative overflow-hidden bg-gradient-to-br from-dark-bg via-[#091b12] to-dark-bg border-b border-card-border py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
+            <div class="absolute inset-0 pointer-events-none overflow-hidden">
+                <div class="absolute top-10 left-10 w-2 h-2 rounded-full bg-neon-green particle"></div>
+                <div class="absolute top-20 right-1/4 w-3 h-3 rounded-full bg-neon-green particle" style="animation-delay: 1s;"></div>
+                <div class="absolute bottom-10 left-1/3 w-2.5 h-2.5 rounded-full bg-neon-green particle" style="animation-delay: 2s;"></div>
+                <div class="absolute top-1/2 right-10 w-2 h-2 rounded-full bg-neon-green particle" style="animation-delay: 1.5s;"></div>
+            </div>
+
+            <div class="max-w-4xl mx-auto text-center space-y-6 relative z-10">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-card-bg neon-border text-neon-green text-xs font-extrabold tracking-wider uppercase">
+                    <span class="w-2 h-2 rounded-full bg-neon-green animate-ping"></span> Paraguay ➔ Argentina
+                </div>
+                <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
+                    Lo mejor en <span class="text-neon-green underline decoration-neon-green/40">importación directa</span>.
+                </h1>
+                <p class="text-sm sm:text-base text-gray-300 max-w-2xl mx-auto leading-relaxed">
+                    Importamos directo desde Paraguay con envíos verificados y seguimiento. Los mejores precios en USD y pesos para Tucumán y Santiago.
+                </p>
+                <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <a href="#catalogoSeccion" class="px-6 py-3.5 rounded-xl bg-neon-green text-black font-extrabold text-sm hover:brightness-110 shadow-[0_0_20px_rgba(0,255,102,0.4)] transition-all flex items-center gap-2">
+                        Ver productos <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </a>
+                    <a href="https://wa.me/" target="_blank" class="px-6 py-3.5 rounded-xl bg-card-bg neon-border text-white font-bold text-sm hover:border-neon-green transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px] text-neon-green">chat</span> WhatsApp
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Barra de Estadísticas -->
+        <section class="border-b border-card-border bg-card-bg/50 py-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-3 gap-4 text-center">
+                <div>
+                    <p id="statProductos" class="text-lg sm:text-2xl font-extrabold text-white">24.022</p>
+                    <p class="text-[11px] sm:text-xs text-gray-400 uppercase font-mono">Productos</p>
+                </div>
+                <div>
+                    <p id="statCategorias" class="text-lg sm:text-2xl font-extrabold text-neon-green">35</p>
+                    <p class="text-[11px] sm:text-xs text-gray-400 uppercase font-mono">Categorías</p>
+                </div>
+                <div>
+                    <p class="text-lg sm:text-2xl font-extrabold text-white flex items-center justify-center gap-1">★ 4.9</p>
+                    <p class="text-[11px] sm:text-xs text-gray-400 uppercase font-mono">Clientes Felices</p>
+                </div>
+            </div>
+        </section>
+
+        <div id="catalogoSeccion" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            
+            <!-- Buscador y Filtros -->
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <div class="relative w-full flex-1">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">search</span>
+                    <input id="buscador" oninput="buscarProductosServidor()" class="w-full h-12 pl-12 pr-4 rounded-xl bg-card-bg neon-border text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-neon-green transition-all" placeholder="Buscar entre los 24 mil productos (ej. iPhone, JBL, Lattafa)..." type="text"/>
+                </div>
+                <div class="w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                    <div id="categorias-container" class="flex items-center gap-2 flex-nowrap">
+                        <button class="cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-neon-green text-black shadow-sm" onclick="filtrarCategoria('TODOS', this)">TODOS</button>
+                        <button class="cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-card-bg text-gray-300 hover:text-white neon-border text-neon-green flex items-center gap-1" onclick="filtrarCategoria('FAVORITOS', this)">
+                            <span class="material-symbols-outlined text-[16px]">favorite</span> Favoritos (<span id="favCountBadge">0</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-gray-400 px-1 font-mono">
+                <span id="productCounter">Buscando en catálogo completo...</span>
+                <span>Servidor Supabase Activo</span>
+            </div>
+
+            <!-- Cuadrícula Principal de Productos -->
+            <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div class="col-span-full text-center py-20 text-gray-400">Cargando productos...</div>
+            </div>
+
+            <!-- Callout de WhatsApp inferior -->
+            <div class="my-16 bg-gradient-to-r from-card-bg via-[#0d1b12] to-card-bg neon-border rounded-2xl p-8 text-center space-y-4">
+                <h3 class="text-xl sm:text-2xl font-extrabold text-white">¿No encontrás lo que buscás?</h3>
+                <p class="text-xs sm:text-sm text-gray-300 max-w-md mx-auto">Escribinos por WhatsApp y te ayudamos a conseguirlo directamente desde Paraguay al mejor precio.</p>
+                <a href="https://wa.me/" target="_blank" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-neon-green text-black font-extrabold text-sm hover:brightness-110 shadow-[0_0_15px_rgba(0,255,102,0.4)] transition-all">
+                    <span class="material-symbols-outlined text-[20px]">chat</span> Hablar ahora
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Detalle Producto -->
+    <div id="productModalBackdrop" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-3 sm:p-6">
+        <div id="productModalDialog" class="bg-card-bg neon-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative p-6 shadow-2xl">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-card-border hover:bg-neon-green hover:text-black flex items-center justify-center text-white transition-all cursor-pointer font-bold">✕</button>
+            <div id="modalContentContainer"></div>
+        </div>
+    </div>
+
+    <!-- Carrito Drawer -->
+    <div id="cartDrawerBackdrop" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden">
+        <div id="cartDrawerPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-card-bg border-l border-card-border shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300">
+            <div class="p-5 bg-black/40 flex items-center justify-between border-b border-card-border">
+                <h3 class="font-extrabold text-lg text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-neon-green">shopping_bag</span> Tu Carrito <span id="cartDrawerCount" class="text-xs text-gray-400 font-normal">(0)</span>
+                </h3>
+                <button onclick="toggleCartDrawer(false)" class="w-9 h-9 rounded-full bg-card-border hover:bg-neon-green hover:text-black flex items-center justify-center text-white transition-all cursor-pointer">✕</button>
+            </div>
+            <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-4 divide-y divide-card-border space-y-3">
+                <p class="text-center text-gray-500 mt-10">Tu carrito está vacío</p>
+            </div>
+            <div class="p-5 bg-black/40 border-t border-card-border space-y-4">
+                <div class="flex justify-between items-baseline font-bold text-lg">
+                    <span class="text-gray-300">Total a Pagar:</span>
+                    <span id="cartTotal" class="text-neon-green text-xl">$0.00</span>
+                </div>
+                <button onclick="checkoutViaWhatsApp()" class="w-full py-4 rounded-xl bg-neon-green hover:brightness-110 text-black font-extrabold shadow-[0_0_20px_rgba(0,255,102,0.4)] flex items-center justify-center gap-2 cursor-pointer transition-all">
+                    <span class="material-symbols-outlined text-[22px]">chat</span>
+                    <span>FINALIZAR PEDIDO VÍA WHATSAPP</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-6 left-6 z-50 bg-card-bg neon-border text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="w-7 h-7 rounded-lg bg-neon-green text-black font-extrabold flex items-center justify-center">✓</div>
+        <div class="text-xs">
+            <p id="toastTitle" class="font-bold text-neon-green">Aviso</p>
+            <p id="toastSubtitle" class="text-gray-300">Acción completada</p>
+        </div>
+    </div>
+
+    <!-- Script Principal con Google Auth y Favoritos -->
+    <script>
+        const SUPABASE_URL = "https://otnjxfzttdjihjcoximm.supabase.co";
+        const SUPABASE_KEY = "sb_publishable_ifoJPoL74pGM2B4cBxSLwg_7OrOGYy5";
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let carrito = [];
+        let favoritos = JSON.parse(localStorage.getItem('cellzone_favs') || '[]');
+        let categoriaActual = 'TODOS';
+        let timeoutBusqueda = null;
+        let todosLosResultadosActuales = [];
+
+        // Inicialización y verificación de sesión de Google
+        async function cargarDatosIniciales() {
+            actualizarContadorFavoritos();
+
+            // Escuchar automáticamente los cambios de sesión (ej. al volver de Google)
+            supabaseClient.auth.onAuthStateChange((event, session) => {
+                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+                    verificarSesionGoogle();
+                }
+            });
+
+            await verificarSesionGoogle();
+            await consultarSupabase();
+        }
+
+        async function verificarSesionGoogle() {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (session && session.user) {
+                const user = session.user;
+                const avatar = user.user_metadata?.avatar_url || 'https://via.placeholder.com/40';
+                const nombre = user.user_metadata?.full_name || user.email;
+
+                document.getElementById('authContainer').innerHTML = `
+                    <div class="flex items-center gap-2 bg-card-bg neon-border px-3 py-1.5 rounded-xl">
+                        <img src="${avatar}" alt="Avatar" class="w-7 h-7 rounded-full object-cover border border-neon-green">
+                        <span class="text-xs font-bold text-white hidden sm:inline max-w-[100px] truncate">${nombre}</span>
+                        <button onclick="mostrarPerfil()" class="text-[10px] text-neon-green hover:underline ml-1 cursor-pointer font-bold bg-transparent border-none p-0" title="Mi Perfil">Perfil</button>
+                        <button onclick="cerrarSesionGoogle()" class="text-[10px] text-red-400 hover:underline ml-1 cursor-pointer" title="Cerrar sesión">Salir</button>
+                    </div>
+                `;
+            } else {
+                document.getElementById('authContainer').innerHTML = `
+                    <button onclick="loginConGoogle()" class="px-3.5 py-2 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+                        <span class="material-symbols-outlined text-[18px] text-neon-green">account_circle</span>
+                        <span class="hidden sm:inline">Ingresar con Google</span>
+                    </button>
+                `;
+            }
+        }
+
+        async function loginConGoogle() {
+            const { error } = await supabaseClient.auth.signInWithOAuth({
+                provider: 'google',
+                options: { redirectTo: window.location.href }
+            });
+            if (error) console.error("Error al iniciar sesión con Google:", error.message);
+        }
+
+        async function cerrarSesionGoogle() {
+            await supabaseClient.auth.signOut();
+            location.reload();
+        }
+
+        function irAInicio() {
+            const perfilDiv = document.getElementById('vistaPerfil');
+            if (perfilDiv) perfilDiv.classList.add('hidden');
+
+            const prodContainer = document.getElementById('productosContainer');
+            if (prodContainer) prodContainer.style.display = '';
+
+            const buscador = document.getElementById('buscadorContainer') || document.querySelector('.max-w-7xl');
+            if (buscador) buscador.style.display = '';
+
+            const sectionHero = document.querySelector('section');
+            if (sectionHero) sectionHero.style.display = '';
+            
+            const mainContent = document.querySelector('main');
+            if (mainContent) {
+                Array.from(mainContent.children).forEach(child => {
+                    if (child.id !== 'vistaPerfil') child.style.display = '';
+                });
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        
+        async function mostrarPerfil() {
+            // Ocultar TODO menos el header y el perfil
+            const prodContainer = document.getElementById('productosContainer');
+            if (prodContainer) prodContainer.style.display = 'none';
+
+            const buscador = document.getElementById('buscadorContainer') || document.querySelector('.max-w-7xl');
+            if (buscador) buscador.style.display = 'none';
+            
+            const sectionHero = document.querySelector('section');
+            if (sectionHero) sectionHero.style.display = 'none';
+            
+            const mainContent = document.querySelector('main');
+            if (mainContent) {
+                Array.from(mainContent.children).forEach(child => {
+                    if (child.id !== 'vistaPerfil') child.style.display = 'none';
+                });
+            }
+
+            const perfilDiv = document.getElementById('vistaPerfil');
+            if (perfilDiv) perfilDiv.classList.remove('hidden');
+            
+            const editSec = document.getElementById('seccionEditarPerfil');
+            if (editSec) editSec.classList.add('hidden');
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            const user = session.user;
+            const email = user.email || '';
+            const avatar = user.user_metadata?.avatar_url;
+            const nombreMeta = user.user_metadata?.full_name || email.split('@')[0];
+
+            document.getElementById('perfilEmailTxt').innerText = email;
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('full_name, phone, province, city, address')
+                .eq('id', user.id)
+                .single();
+
+            const fullName = data?.full_name || nombreMeta;
+            document.getElementById('perfilNombreTxt').innerText = fullName;
+            
+            const profFullName = document.getElementById('profFullName');
+            if (profFullName) profFullName.value = fullName;
+
+            if (avatar) {
+                const img = document.getElementById('perfilImgAvatar');
+                if (img) {
+                    img.src = avatar;
+                    img.classList.remove('hidden');
+                }
+                const initDiv = document.getElementById('perfilInitAvatar');
+                if (initDiv) initDiv.classList.add('hidden');
+            } else {
+                const initDiv = document.getElementById('perfilInitAvatar');
+                if (initDiv) {
+                    initDiv.innerText = fullName.charAt(0).toUpperCase();
+                    initDiv.classList.remove('hidden');
+                }
+                const img = document.getElementById('perfilImgAvatar');
+                if (img) img.classList.add('hidden');
+            }
+
+            if (data) {
+                const profPhone = document.getElementById('profPhone');
+                if (profPhone) profPhone.value = data.phone || '';
+                
+                const profProvince = document.getElementById('profProvince');
+                if (profProvince) profProvince.value = data.province || '';
+                
+                const profCity = document.getElementById('profCity');
+                if (profCity) profCity.value = data.city || '';
+                
+                const profAddress = document.getElementById('profAddress');
+                if (profAddress) profAddress.value = data.address || '';
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cerrarPerfil() {
+            irAInicio();
+        }
+
+        function toggleEditarPerfil() {
+            const editSec = document.getElementById('seccionEditarPerfil');
+            if (editSec) editSec.classList.toggle('hidden');
+        }
+
+        async function guardarPerfil(e) {
+            e.preventDefault();
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            const updates = {
+                id: session.user.id,
+                full_name: document.getElementById('profFullName').value,
+                phone: document.getElementById('profPhone').value,
+                province: document.getElementById('profProvince').value,
+                city: document.getElementById('profCity').value,
+                address: document.getElementById('profAddress').value,
+                updated_at: new Date(),
+            };
+
+            const btn = document.getElementById('btnGuardarPerfil');
+            if (btn) btn.innerText = "Guardando...";
+            
+            let { error } = await supabaseClient.from('profiles').upsert(updates);
+            if (btn) btn.innerText = "Guardar cambios";
+
+            if (error) {
+                alert('Error al actualizar el perfil');
+            } else {
+                alert('¡Perfil actualizado con éxito!');
+                const perfilNombreTxt = document.getElementById('perfilNombreTxt');
+                if (perfilNombreTxt) perfilNombreTxt.innerText = updates.full_name;
+                toggleEditarPerfil();
+            }
+        }
+        
+        // Gestión de Favoritos
+        function toggleFavorito(id, event) {
+            if(event) event.stopPropagation();
+            const index = favoritos.indexOf(id);
+            if (index > -1) {
+                favoritos.splice(index, 1);
+                showToast('Eliminado de Favoritos', 'Producto removido de tu lista');
+            } else {
+                favoritos.push(id);
+                showToast('❤️ Añadido a Favoritos', 'Guardado en tu lista personal');
+            }
+            localStorage.setItem('cellzone_favs', JSON.stringify(favoritos));
+            actualizarContadorFavoritos();
+
+            // Si está en la vista de favoritos, refrescar
+            if (categoriaActual === 'FAVORITOS') {
+                consultarSupabase('', 'FAVORITOS');
+            } else {
+                renderizarProductos(todosLosResultadosActuales);
+            }
+        }
+
+        function actualizarContadorFavoritos() {
+            document.getElementById('favCountBadge').textContent = favoritos.length;
+        }
+
+        // Consultas a Supabase
+        async function consultarSupabase(termino = '', categoria = 'TODOS') {
+            try {
+                if (categoria === 'FAVORITOS') {
+                    if (favoritos.length === 0) {
+                        todosLosResultadosActuales = [];
+                        renderizarProductos([]);
+                        return;
+                    }
+                    // Consultar los productos favoritos por ID
+                    const { data, error } = await supabaseClient
+                        .from('productos')
+                        .select('*')
+                        .in('id', favoritos);
+                    
+                    if (error) throw error;
+                    procesarYRenderizar(data || [], termino);
+                    return;
+                }
+
+                let url = `${SUPABASE_URL}/rest/v1/productos?select=*`;
+                
+                if (termino.trim() !== '') {
+                    url += `&nombre=ilike.*${encodeURIComponent(termino.trim())}*`;
+                }
+
+                if (categoria && categoria !== 'TODOS') {
+                    url += `&categoria=eq.${encodeURIComponent(categoria)}`;
+                }
+
+                url += `&limit=60`;
+
+                const response = await fetch(url, {
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization": `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                const data = await response.json();
+                procesarYRenderizar(data || [], termino);
+
+            } catch (error) {
+                console.error("Error conectando con Supabase:", error);
+                document.getElementById('productGrid').innerHTML = '<div class="col-span-full text-center py-10 text-red-400">Error al conectar con la base de datos.</div>';
+            }
+        }
+
+        function procesarYRenderizar(data, termino) {
+            todosLosResultadosActuales = data.map(p => {
+                const baseUSD = parseFloat(p.precioUSD || p.precio_usd || p.precioARS || p.precio_ars || p.precio || 0);
+                const precioFinal = Math.round((baseUSD * 1.20) * 100) / 100;
+                return {
+                    id: p.id,
+                    nombre: p.nombre || 'Sin nombre',
+                    categoria: p.categoria || 'General',
+                    precio: precioFinal,
+                    imagen: p.imagen || 'https://via.placeholder.com/300',
+                    descripcion: p.descripcion || 'Sin descripción disponible.'
+                };
+            });
+
+            // Si hay término de búsqueda activo y estamos en vista favoritos, filtrar localmente también
+            let finalProcesados = todosLosResultadosActuales;
+            if (termino.trim() !== '' && categoriaActual === 'FAVORITOS') {
+                const t = termino.toLowerCase();
+                finalProcesados = todosLosResultadosActuales.filter(p => p.nombre.toLowerCase().includes(t));
+            }
+
+            renderizarProductos(finalProcesados);
+        }
+
+        function buscarProductosServidor() {
+            clearTimeout(timeoutBusqueda);
+            const texto = document.getElementById('buscador').value;
+            timeoutBusqueda = setTimeout(() => {
+                consultarSupabase(texto, categoriaActual);
+            }, 300);
+        }
+
+        function filtrarCategoria(cat, btn) {
+            categoriaActual = cat;
+            document.querySelectorAll('.cat-pill').forEach(b => {
+                b.className = "cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-card-bg text-gray-300 hover:text-white neon-border";
+            });
+            if(btn) {
+                if(cat === 'FAVORITOS') {
+                    btn.className = "cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-neon-green text-black shadow-sm flex items-center gap-1";
+                } else {
+                    btn.className = "cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-neon-green text-black shadow-sm";
+                }
+            }
+            const texto = document.getElementById('buscador').value;
+            consultarSupabase(texto, categoriaActual);
+        }
+
+        function renderizarProductos(productos) {
+            const grid = document.getElementById('productGrid');
+            document.getElementById('productCounter').textContent = `Mostrando ${productos.length} resultados`;
+
+            if (productos.length === 0) {
+                grid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500">No se encontraron productos en esta sección.</div>';
+                return;
+            }
+
+            grid.innerHTML = productos.map(p => {
+                const esFavorito = favoritos.includes(String(p.id));
+                const favColor = esFavorito ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-400';
+                return `
+                    <article class="product-card group flex flex-col justify-between bg-card-bg neon-border rounded-2xl p-3.5 sm:p-4 hover:border-neon-green transition-all duration-300 relative overflow-hidden cursor-pointer shadow-lg" onclick="openProductModal('${p.id}')">
+                        <div>
+                            <div class="relative w-full aspect-square rounded-xl bg-black/40 overflow-hidden flex items-center justify-center p-3">
+                                <button onclick="toggleFavorito('${p.id}', event)" class="absolute top-2.5 right-2.5 z-10 p-2 rounded-full bg-black/60 backdrop-blur-md transition-all cursor-pointer ${favColor}">
+                                    <span class="material-symbols-outlined text-[20px]">favorite</span>
+                                </button>
+                                <img alt="${p.nombre}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" src="${p.imagen}" loading="lazy"/>
+                            </div>
+                            <div class="mt-3.5 space-y-1">
+                                <span class="text-[10px] text-neon-green uppercase font-mono tracking-wider">${p.categoria}</span>
+                                <h2 class="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug">${p.nombre}</h2>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-card-border space-y-3">
+                            <div class="font-extrabold text-base sm:text-lg text-neon-green">$${p.precio.toFixed(2)}</div>
+                            <button onclick="event.stopPropagation(); agregarAlCarrito('${p.id}')" class="w-full py-2.5 px-3 rounded-xl bg-neon-green hover:brightness-110 text-black font-extrabold text-xs shadow-[0_0_10px_rgba(0,255,102,0.3)] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                                <span>AGREGAR</span>
+                            </button>
+                        </div>
+                    </article>
+                `;
+            }).join('');
+        }
+
+        function openProductModal(id) {
+            const p = todosLosResultadosActuales.find(item => item.id == id);
+            if (!p) return;
+
+            document.getElementById('modalContentContainer').innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="aspect-square bg-black/40 rounded-xl flex items-center justify-center p-4 neon-border">
+                        <img src="${p.imagen}" alt="${p.nombre}" class="max-h-full object-contain">
+                    </div>
+                    <div class="flex flex-col justify-between space-y-4">
+                        <div>
+                            <span class="text-xs text-neon-green uppercase font-mono bg-neon-green/10 px-3 py-1 rounded-full border border-neon-green/30">${p.categoria}</span>
+                            <h2 class="text-xl font-bold text-white mt-3">${p.nombre}</h2>
+                            <div class="text-2xl font-extrabold text-neon-green mt-2">$${p.precio.toFixed(2)}</div>
+                            <p class="text-sm text-gray-300 mt-3 leading-relaxed bg-black/30 p-3.5 rounded-xl border border-card-border">${p.descripcion}</p>
+                        </div>
+                        <div class="space-y-3">
+                            <button onclick="agregarAlCarrito('${p.id}'); closeProductModal();" class="w-full py-3.5 rounded-xl bg-card-border hover:bg-neon-green hover:text-black text-white font-bold transition-all cursor-pointer neon-border">
+                                Añadir al Carrito
+                            </button>
+                            <button onclick="comprarItemWhatsApp('${p.nombre.replace(/'/g, "")}', ${p.precio})" class="w-full py-3.5 rounded-xl bg-neon-green text-black font-extrabold shadow-[0_0_15px_rgba(0,255,102,0.4)] hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 transition-all">
+                                <span class="material-symbols-outlined text-[20px]">chat</span>
+                                Consultar por WhatsApp
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const backdrop = document.getElementById('productModalBackdrop');
+            backdrop.classList.remove('hidden');
+            backdrop.classList.add('flex');
+        }
+
+        function closeProductModal() {
+            const backdrop = document.getElementById('productModalBackdrop');
+            backdrop.classList.remove('flex');
+            backdrop.classList.add('hidden');
+        }
+
+        function agregarAlCarrito(id) {
+            const producto = todosLosResultadosActuales.find(item => item.id == id);
+            if (!producto) return;
+            
+            const existente = carrito.find(item => item.id == id);
+            if (existente) {
+                existente.cantidad++;
+            } else {
+                carrito.push({ ...producto, cantidad: 1 });
+            }
+            actualizarCarritoUI();
+            showToast('¡Añadido al Carrito!', producto.nombre);
+            toggleCartDrawer(true);
+        }
+
+        function eliminarDelCarrito(id) {
+            carrito = carrito.filter(item => item.id != id);
+            actualizarCarritoUI();
+        }
+
+        function cambiarCantidad(id, delta) {
+            const item = carrito.find(i => i.id == id);
+            if(!item) return;
+            item.cantidad += delta;
+            if(item.cantidad <= 0) {
+                eliminarDelCarrito(id);
+            } else {
+                actualizarCarritoUI();
+            }
+        }
+
+        function actualizarCarritoUI() {
+            const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
+            document.getElementById('headerCartCount').textContent = totalItems;
+            document.getElementById('cartDrawerCount').textContent = `(${totalItems})`;
+
+            const container = document.getElementById('cartItemsContainer');
+            if (carrito.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 mt-10">Tu carrito está vacío</p>';
+                document.getElementById('cartTotal').textContent = '$0.00';
+                return;
+            }
+
+            let total = 0;
+            container.innerHTML = carrito.map(item => {
+                const subtotal = item.precio * item.cantidad;
+                total += subtotal;
+                return `
+                    <div class="py-3 flex items-center justify-between gap-3">
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-xs font-semibold text-white truncate">${item.nombre}</h4>
+                            <p class="text-xs text-neon-green">$${item.precio.toFixed(2)} x ${item.cantidad}</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <button onclick="cambiarCantidad('${item.id}', -1)" class="w-6 h-6 rounded bg-card-border font-bold hover:bg-neon-green hover:text-black transition-all">-</button>
+                                <span class="text-xs font-semibold text-white">${item.cantidad}</span>
+                                <button onclick="cambiarCantidad('${item.id}', 1)" class="w-6 h-6 rounded bg-card-border font-bold hover:bg-neon-green hover:text-black transition-all">+</button>
+                                <button onclick="eliminarDelCarrito('${item.id}')" class="text-red-400 text-xs ml-auto hover:underline">Eliminar</button>
+                            </div>
+                        </div>
+                        <div class="font-bold text-sm text-neon-green">$${subtotal.toFixed(2)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('cartTotal').textContent = `$${total.toFixed(2)}`;
+        }
+
+        function toggleCartDrawer(open) {
+            const panel = document.getElementById('cartDrawerPanel');
+            const backdrop = document.getElementById('cartDrawerBackdrop');
+            if (open) {
+                backdrop.classList.remove('hidden');
+                setTimeout(() => panel.classList.remove('translate-x-full'), 10);
+            } else {
+                panel.classList.add('translate-x-full');
+                setTimeout(() => backdrop.classList.add('hidden'), 300);
+            }
+        }
+
+        function checkoutViaWhatsApp() {
+            if (carrito.length === 0) return;
+            let mensaje = "¡Hola CELLZONE IMPORTADOS! Deseo hacer el siguiente pedido:\n\n";
+            let total = 0;
+            carrito.forEach(i => {
+                mensaje += `- ${i.cantidad}x ${i.nombre} ($${(i.precio * i.cantidad).toFixed(2)})\n`;
+                total += i.precio * i.cantidad;
+            });
+            mensaje += `\n*Total a pagar: $${total.toFixed(2)}*`;
+            window.open(`https://wa.me/595995677862?text=${encodeURIComponent(mensaje)}`, '_blank');
+        }
+
+        function comprarItemWhatsApp(nombre, precio) {
+            const mensaje = `¡Hola CELLZONE! Me interesa este producto:\n\n*${nombre}*\nPrecio: $${precio}\n\n¿Tienen stock disponible?`;
+            window.open(`https://wa.me/595995677862?text=${encodeURIComponent(mensaje)}`, '_blank');
+        }
+
+        function showToast(title, subtitle) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastTitle').textContent = title;
+            document.getElementById('toastSubtitle').textContent = subtitle;
+            toast.classList.remove('opacity-0', 'translate-y-24');
+            setTimeout(() => toast.classList.add('opacity-0', 'translate-y-24'), 2500);
+        }
+
+        cargarDatosIniciales();
+    </script>
+
+    <!-- Vista de Perfil Oculta por defecto -->
+        <!-- Vista de Perfil Estilizada -->
+        <!-- Vista de Perfil Estilizada -->
+    <div id="vistaPerfil" class="hidden max-w-2xl mx-auto p-4 mt-6 mb-12 text-white">
+        <button onclick="irAInicio()" class="px-4 py-2.5 bg-card-bg neon-border rounded-xl text-neon-green hover:bg-neon-green hover:text-black transition-all mb-6 flex items-center gap-2 cursor-pointer font-bold text-xs shadow-lg">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span> Volver a la tienda
+        </button>
+
+        <!-- Tarjeta de Usuario -->
+        <div class="bg-card-bg neon-border rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+            <div id="perfilAvatarContainer">
+                <img id="perfilImgAvatar" src="" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-neon-green hidden">
+                <div id="perfilInitAvatar" class="w-20 h-20 rounded-full bg-neon-green text-black font-bold text-2xl flex items-center justify-center border-2 border-neon-green hidden"></div>
+            </div>
+            <div class="flex-1">
+                <h2 id="perfilNombreTxt" class="text-xl font-bold text-white"></h2>
+                <p id="perfilEmailTxt" class="text-xs text-gray-400 mt-1"></p>
+                <button onclick="toggleEditarPerfil()" class="mt-3 px-4 py-2 bg-neon-green/10 border border-neon-green text-neon-green rounded-xl text-xs font-bold hover:bg-neon-green hover:text-black transition-all flex items-center gap-1.5 mx-auto sm:mx-0 cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">edit</span> Editar perfil
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección Mis Pedidos -->
+        <div class="bg-card-bg neon-border rounded-2xl p-6 mb-6">
+            <h3 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-neon-green">package</span> Mis pedidos
+            </h3>
+            <div class="text-center py-8 text-gray-400 border border-dashed border-gray-800 rounded-xl">
+                <span class="material-symbols-outlined text-[36px] text-gray-600 mb-2">inventory_2</span>
+                <p class="text-sm">Todavía no tenés pedidos.</p>
+            </div>
+        </div>
+
+        <!-- Formulario de Edición (Oculto por defecto) -->
+        <div id="seccionEditarPerfil" class="hidden bg-card-bg neon-border rounded-2xl p-6">
+            <h3 class="text-base font-bold text-neon-green mb-4">Actualizar tus datos</h3>
+            <form onsubmit="guardarPerfil(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Nombre completo</label>
+                    <input type="text" id="profFullName" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Teléfono</label>
+                    <input type="text" id="profPhone" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Provincia</label>
+                    <input type="text" id="profProvince" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Ciudad</label>
+                    <input type="text" id="profCity" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Dirección</label>
+                    <input type="text" id="profAddress" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" id="btnGuardarPerfil" class="flex-1 bg-neon-green text-black font-bold p-2.5 rounded-xl hover:opacity-90 transition-all cursor-pointer text-sm">
+                        Guardar cambios
+                    </button>
+                    <button type="button" onclick="toggleEditarPerfil()" class="px-4 py-2.5 bg-gray-800 text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-700 cursor-pointer">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function irAInicio() {
+            const perfilDiv = document.getElementById('vistaPerfil');
+            if (perfilDiv) perfilDiv.classList.add('hidden');
+            
+            // Restaurar todos los contenedores principales de la tienda
+            const mainElements = document.querySelectorAll('main, #productosContainer, .max-w-7xl, section');
+            mainElements.forEach(el => {
+                if (el.id !== 'vistaPerfil' && !el.contains(perfilDiv)) {
+                    el.style.display = '';
+                }
+            });
+            
+            const prodContainer = document.getElementById('productosContainer');
+            if (prodContainer) prodContainer.style.display = '';
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function mostrarPerfil() {
+            const mainElements = document.querySelectorAll('main, #productosContainer, .max-w-7xl, section');
+            mainElements.forEach(el => {
+                if (el.id !== 'vistaPerfil' && !el.contains(document.getElementById('vistaPerfil'))) {
+                    if (!el.querySelector('#authContainer')) {
+                        el.style.display = 'none';
+                    }
+                }
+            });
+            
+            const prodContainer = document.getElementById('productosContainer');
+            if (prodContainer) prodContainer.style.display = 'none';
+
+            const perfilDiv = document.getElementById('vistaPerfil');
+            if (perfilDiv) perfilDiv.classList.remove('hidden');
+            
+            document.getElementById('seccionEditarPerfil').classList.add('hidden');
+
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            const user = session.user;
+            const email = user.email || '';
+            const avatar = user.user_metadata?.avatar_url;
+            const nombreMeta = user.user_metadata?.full_name || email.split('@')[0];
+
+            document.getElementById('perfilEmailTxt').innerText = email;
+
+            const { data, error } = await supabaseClient
+                .from('profiles')
+                .select('full_name, phone, province, city, address')
+                .eq('id', user.id)
+                .single();
+
+            const fullName = data?.full_name || nombreMeta;
+            document.getElementById('perfilNombreTxt').innerText = fullName;
+            document.getElementById('profFullName').value = fullName;
+
+            if (avatar) {
+                const img = document.getElementById('perfilImgAvatar');
+                img.src = avatar;
+                img.classList.remove('hidden');
+                document.getElementById('perfilInitAvatar').classList.add('hidden');
+            } else {
+                const initDiv = document.getElementById('perfilInitAvatar');
+                initDiv.innerText = fullName.charAt(0).toUpperCase();
+                initDiv.classList.remove('hidden');
+                document.getElementById('perfilImgAvatar').classList.add('hidden');
+            }
+
+            if (data) {
+                document.getElementById('profPhone').value = data.phone || '';
+                document.getElementById('profProvince').value = data.province || '';
+                document.getElementById('profCity').value = data.city || '';
+                document.getElementById('profAddress').value = data.address || '';
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cerrarPerfil() {
+            irAInicio();
+        }
+
+        function toggleEditarPerfil() {
+            const editSec = document.getElementById('seccionEditarPerfil');
+            editSec.classList.toggle('hidden');
+        }
+
+        async function guardarPerfil(e) {
+            e.preventDefault();
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            if (!session) return;
+
+            const updates = {
+                id: session.user.id,
+                full_name: document.getElementById('profFullName').value,
+                phone: document.getElementById('profPhone').value,
+                province: document.getElementById('profProvince').value,
+                city: document.getElementById('profCity').value,
+                address: document.getElementById('profAddress').value,
+                updated_at: new Date(),
+            };
+
+            const btn = document.getElementById('btnGuardarPerfil');
+            btn.innerText = "Guardando...";
+            
+            let { error } = await supabaseClient.from('profiles').upsert(updates);
+            btn.innerText = "Guardar cambios";
+
+            if (error) {
+                alert('Error al actualizar el perfil');
+            } else {
+                alert('¡Perfil actualizado con éxito!');
+                document.getElementById('perfilNombreTxt').innerText = updates.full_name;
+                toggleEditarPerfil();
+            }
+        }
+    </script>
+
+<!-- PARCHE FORZADO DE NAVEGACION Y SESION -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    // 1. Forzar que el logo de CELLZONE lleve al inicio siempre
+    const enlaces = document.querySelectorAll('header a');
+    enlaces.forEach(a => {
+        if(a.innerText.toUpperCase().includes('CELL') || a.innerText.toUpperCase().includes('ZONE')) {
+            a.onclick = (e) => {
+                e.preventDefault();
+                if(typeof irAInicio === 'function') irAInicio();
+            };
+        }
+    });
+
+    // 2. Forzar que el inicio de sesión use tu dominio oficial
+    window.loginConGoogle = async function() {
+        const { error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: { redirectTo: window.location.origin }
+        });
+        if (error) alert("Error al conectar con Google: " + error.message);
+    };
+
+    // 3. Obligar a Supabase a actualizar los botones apenas detecte la sesión
+    supabaseClient.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'USER_UPDATED') {
+            if(typeof verificarSesionGoogle === 'function') verificarSesionGoogle();
+        }
+    });
+    
+    // 4. Doble chequeo de seguridad 1 segundo después de cargar la web
+    setTimeout(() => {
+        if(typeof verificarSesionGoogle === 'function') verificarSesionGoogle();
+    }, 1000);
+});
+</script>
+
+</body>
+</html>
