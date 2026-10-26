@@ -409,7 +409,7 @@ let _ultimosProductos = [];
                             <button onclick="agregarAlCarrito('${p.id}'); closeProductModal();" class="w-full py-3.5 rounded-xl bg-card-border hover:bg-neon-green hover:text-black text-white font-bold transition-all cursor-pointer neon-border">
                                 Añadir al Carrito
                             </button>
-                            <button onclick="comprarItemWhatsApp('${p.nombre.replace(/'/g, "")}', ${p.precio})" class="w-full py-3.5 rounded-xl bg-neon-green text-black font-extrabold shadow-[0_0_15px_rgba(0,255,102,0.4)] hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 transition-all">
+                            <button onclick="comprarItemWhatsApp('${p.nombre.replace(/'/g, "")}', ${formatearAmbosPrecios(p)})" class="w-full py-3.5 rounded-xl bg-neon-green text-black font-extrabold shadow-[0_0_15px_rgba(0,255,102,0.4)] hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 transition-all">
                                 <span class="material-symbols-outlined text-[20px]">chat</span>
                                 Consultar por WhatsApp
                             </button>
