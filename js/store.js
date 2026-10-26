@@ -480,7 +480,7 @@ let _ultimosProductos = [];
                     <div class="py-3 flex items-center justify-between gap-3">
                         <div class="flex-1 min-w-0">
                             <h4 class="text-xs font-semibold text-white truncate">${item.nombre}</h4>
-                            <p class="text-xs text-neon-green">$${item.precio.toFixed(2)} x ${item.cantidad}</p>
+                            <p class="text-xs text-neon-green">${formatearAmbosPrecios(p)} x ${item.cantidad}</p>
                             <div class="flex items-center gap-2 mt-2">
                                 <button onclick="cambiarCantidad('${item.id}', -1)" class="w-6 h-6 rounded bg-card-border font-bold hover:bg-neon-green hover:text-black transition-all">-</button>
                                 <span class="text-xs font-semibold text-white">${item.cantidad}</span>
@@ -488,12 +488,12 @@ let _ultimosProductos = [];
                                 <button onclick="eliminarDelCarrito('${item.id}')" class="text-red-400 text-xs ml-auto hover:underline">Eliminar</button>
                             </div>
                         </div>
-                        <div class="font-bold text-sm text-neon-green">$${subtotal.toFixed(2)}</div>
+                        <div class="font-bold text-sm text-neon-green">${formatearAmbosPrecios(p)}</div>
                     </div>
                 `;
             }).join('');
 
-            document.getElementById('cartTotal').textContent = `$${total.toFixed(2)}`;
+            document.getElementById('cartTotal').textContent = `${formatearAmbosPrecios(p)}`;
         }
 
         function toggleCartDrawer(open) {
@@ -513,15 +513,15 @@ let _ultimosProductos = [];
             let mensaje = "¡Hola CELLZONE IMPORTADOS! Deseo hacer el siguiente pedido:\n\n";
             let total = 0;
             carrito.forEach(i => {
-                mensaje += `- ${i.cantidad}x ${i.nombre} ($${(i.precio * i.cantidad).toFixed(2)})\n`;
+                mensaje += `- ${i.cantidad}x ${i.nombre} (${formatearAmbosPrecios(p)})\n`;
                 total += i.precio * i.cantidad;
             });
-            mensaje += `\n*Total a pagar: $${total.toFixed(2)}*`;
+            mensaje += `\n*Total a pagar: ${formatearAmbosPrecios(p)}*`;
             window.open(`https://wa.me/595995677862?text=${encodeURIComponent(mensaje)}`, '_blank');
         }
 
         function comprarItemWhatsApp(nombre, precio) {
-            const mensaje = `¡Hola CELLZONE! Me interesa este producto:\n\n*${nombre}*\nPrecio: $${precio}\n\n¿Tienen stock disponible?`;
+            const mensaje = `¡Hola CELLZONE! Me interesa este producto:\n\n*${nombre}*\nPrecio: ${formatearAmbosPrecios(p)}\n\n¿Tienen stock disponible?`;
             window.open(`https://wa.me/595995677862?text=${encodeURIComponent(mensaje)}`, '_blank');
         }
 
@@ -711,9 +711,9 @@ function formatearPrecio(p) {
     const usd = parseFloat(p.precio_usd || p.precio || 0);
     const ars = parseFloat(p.precio_ars || (usd * 1100)); // fallback estimado si faltara ars
     if (monedaActual === 'ARS') {
-        return `$${Math.round(ars).toLocaleString('es-AR')} ARS`;
+        return `${formatearAmbosPrecios(p)} ARS`;
     } else {
-        return `$${usd.toFixed(2)} USD`;
+        return `${formatearAmbosPrecios(p)} USD`;
     }
 }
 
@@ -728,7 +728,7 @@ function formatearAmbosPrecios(p) {
     const usd = parseFloat(p.precio_usd || p.precio || 0);
     const ars = parseFloat(p.precio_ars || (usd * 1200));
     return `<div class="flex flex-col leading-tight">
-        <span class="text-neon-green font-extrabold text-base sm:text-lg">$${usd.toFixed(2)} USD</span>
-        <span class="text-gray-400 text-xs font-semibold">$${Math.round(ars).toLocaleString('es-AR')} ARS</span>
+        <span class="text-neon-green font-extrabold text-base sm:text-lg">${formatearAmbosPrecios(p)} USD</span>
+        <span class="text-gray-400 text-xs font-semibold">${formatearAmbosPrecios(p)} ARS</span>
     </div>`;
 }
