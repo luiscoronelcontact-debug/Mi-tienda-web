@@ -727,7 +727,7 @@ function obtenerPrecioNum(p) {
 function formatearAmbosPrecios(p) {
     const usd = parseFloat(p.precio_usd || p.precio || 0);
     const ars = parseFloat(p.precio_ars || (usd * 1200));
-    return `<div class="flex flex-col">
+    return `<div class="flex flex-col leading-tight">
         <span class="text-neon-green font-extrabold text-base sm:text-lg">$${usd.toFixed(2)} USD</span>
         <span class="text-gray-400 text-xs font-semibold">$${Math.round(ars).toLocaleString('es-AR')} ARS</span>
     </div>`;
