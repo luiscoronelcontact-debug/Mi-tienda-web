@@ -26,6 +26,8 @@ const SUPABASE_URL = "https://otnjxfzttdjihjcoximm.supabase.co";
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let carrito = [];
+let monedaActual = localStorage.getItem('cellzone_moneda') || 'USD';
+let _ultimosProductos = [];
         let favoritos = JSON.parse(localStorage.getItem('cellzone_favs') || '[]');
         let categoriaActual = 'TODOS';
         let timeoutBusqueda = null;
@@ -349,6 +351,7 @@ const SUPABASE_URL = "https://otnjxfzttdjihjcoximm.supabase.co";
         }
 
         function renderizarProductos(productos) {
+    window._ultimosProductos = productos;
             const grid = document.getElementById('productGrid');
             document.getElementById('productCounter').textContent = `Mostrando ${productos.length} resultados`;
 
@@ -375,7 +378,7 @@ const SUPABASE_URL = "https://otnjxfzttdjihjcoximm.supabase.co";
                             </div>
                         </div>
                         <div class="mt-4 pt-3 border-t border-card-border space-y-3">
-                            <div class="font-extrabold text-base sm:text-lg text-neon-green">$${p.precio.toFixed(2)}</div>
+                            <div class="font-extrabold text-base sm:text-lg text-neon-green">$${formatearPrecio(p)}</div>
                             <button onclick="event.stopPropagation(); agregarAlCarrito('${p.id}')" class="w-full py-2.5 px-3 rounded-xl bg-neon-green hover:brightness-110 text-black font-extrabold text-xs shadow-[0_0_10px_rgba(0,255,102,0.3)] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
                                 <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
                                 <span>AGREGAR</span>
@@ -399,7 +402,7 @@ const SUPABASE_URL = "https://otnjxfzttdjihjcoximm.supabase.co";
                         <div>
                             <span class="text-xs text-neon-green uppercase font-mono bg-neon-green/10 px-3 py-1 rounded-full border border-neon-green/30">${p.categoria}</span>
                             <h2 class="text-xl font-bold text-white mt-3">${p.nombre}</h2>
-                            <div class="text-2xl font-extrabold text-neon-green mt-2">$${p.precio.toFixed(2)}</div>
+                            <div class="text-2xl font-extrabold text-neon-green mt-2">$${formatearPrecio(p)}</div>
                             <p class="text-sm text-gray-300 mt-3 leading-relaxed bg-black/30 p-3.5 rounded-xl border border-card-border">${p.descripcion}</p>
                         </div>
                         <div class="space-y-3">
@@ -681,3 +684,41 @@ document.addEventListener("DOMContentLoaded", () => {
         if(typeof verificarSesionGoogle === 'function') verificarSesionGoogle();
     }, 1000);
 });
+
+function cambiarMoneda(nuevaMoneda) {
+    monedaActual = nuevaMoneda;
+    localStorage.setItem('cellzone_moneda', monedaActual);
+    
+    // Actualizar estilo visual de los botones del selector
+    const btnUsd = document.getElementById('btn-usd');
+    const btnArs = document.getElementById('btn-ars');
+    if (btnUsd && btnArs) {
+        if (monedaActual === 'USD') {
+            btnUsd.className = "px-2.5 py-1 rounded-lg text-xs font-extrabold bg-neon-green text-black transition-all";
+            btnArs.className = "px-2.5 py-1 rounded-lg text-xs font-extrabold text-gray-400 hover:text-white transition-all";
+        } else {
+            btnArs.className = "px-2.5 py-1 rounded-lg text-xs font-extrabold bg-neon-green text-black transition-all";
+            btnUsd.className = "px-2.5 py-1 rounded-lg text-xs font-extrabold text-gray-400 hover:text-white transition-all";
+        }
+    }
+
+    if (typeof _ultimosProductos !== 'undefined' && _ultimosProductos.length > 0) {
+        renderizarProductos(_ultimosProductos);
+    }
+}
+
+function formatearPrecio(p) {
+    const usd = parseFloat(p.precio_usd || p.precio || 0);
+    const ars = parseFloat(p.precio_ars || (usd * 1100)); // fallback estimado si faltara ars
+    if (monedaActual === 'ARS') {
+        return `$${Math.round(ars).toLocaleString('es-AR')} ARS`;
+    } else {
+        return `$${usd.toFixed(2)} USD`;
+    }
+}
+
+function obtenerPrecioNum(p) {
+    const usd = parseFloat(p.precio_usd || p.precio || 0);
+    const ars = parseFloat(p.precio_ars || (usd * 1100));
+    return monedaActual === 'ARS' ? ars : usd;
+}

@@ -34,7 +34,13 @@
             <!-- Botones de Google Login y Carrito -->
             <div class="flex items-center gap-3">
                 <div id="authContainer">
-                    <button onclick="loginConGoogle()" class="px-3.5 py-2 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+                    <button 
+        <div class="flex items-center gap-1 bg-card-bg neon-border p-1 rounded-xl">
+            <button id="btn-usd" onclick="cambiarMoneda('USD')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-neon-green text-black transition-all">USD</button>
+            <button id="btn-ars" onclick="cambiarMoneda('ARS')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold text-gray-400 hover:text-white transition-all">ARS</button>
+        </div>
+    
+    <button onclick="loginConGoogle()" class="px-3.5 py-2 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
                         <span class="material-symbols-outlined text-[18px] text-neon-green">account_circle</span>
                         <span class="hidden sm:inline">Ingresar con Google</span>
                     </button>
