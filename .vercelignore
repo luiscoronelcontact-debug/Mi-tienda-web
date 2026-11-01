@@ -1,0 +1,6 @@
+# Allowlist para los despliegues mediante Vercel CLI.
+# Añadir explícitamente nuevos recursos web después de revisarlos.
+/*
+!public
+!vercel.json
+!.vercelignore

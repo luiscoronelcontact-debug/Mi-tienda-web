@@ -1,1 +1,1 @@
-https://yyhssqkxbsntoxcyjuhh.supabase.co
+datos/neo_supabase_url.txt
