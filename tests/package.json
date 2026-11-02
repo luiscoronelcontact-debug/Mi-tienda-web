@@ -1,0 +1,13 @@
+{
+  "name": "cellzone-pruebas-locales",
+  "private": true,
+  "description": "Pruebas aisladas del borrador Cellzone; no incluye acceso real a Supabase.",
+  "scripts": {
+    "css": "tailwindcss -c tailwind.config.cjs -i input.css -o tailwind-test.css --minify",
+    "navegador": "CELLZONE_TEST_CSS=./tailwind-test.css node prueba_navegador.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1",
+    "tailwindcss": "3.4.17"
+  }
+}

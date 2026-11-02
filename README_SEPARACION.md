@@ -1,6 +1,6 @@
 # Borrador: organización de Cellzone
 
-**No desplegar ni fusionar todavía.** Esta rama parte de la versión `main` de GitHub, que no es idéntica a la tienda activa. El HTML de `main` no carga el mismo `js/store.js` ni el cliente Supabase que usa producción. Antes de publicar hay que comparar con la versión buena de la notebook, integrar los archivos necesarios y probar.
+**No desplegar ni fusionar todavía.** Esta rama partió de `main`, que no es idéntico a la tienda activa. Posteriormente se incorporaron para revisión el HTML y logo aportados desde la notebook y correcciones locales. Las pruebas de navegador fueron simuladas; faltan las pruebas reales indicadas en [`REVISION_CELLZONE.md`](REVISION_CELLZONE.md).
 
 ## Carpetas
 
@@ -22,7 +22,7 @@ El repositorio sigue siendo público: las carpetas `herramientas`, `datos`, `res
 
 ## Antes de dar por terminada la migración
 
-1. Cotejar la notebook con producción y esta rama, incluyendo imágenes, scripts y rutas.
+1. Completar las pruebas de las rutas y dependencias de la notebook; el cotejo de huellas y los archivos web aportados ya se incorporaron para revisión.
 2. Revisar las referencias a catálogo y datos, reparar la sincronización sin ejecutarla hasta autorización y comprobar permisos.
 3. Probar localmente y luego en una vista previa autorizada: tienda, productos, carrito, Google/Supabase y WhatsApp.
 4. Revisar que solo se publiquen los recursos previstos, y que los archivos administrativos no se devuelvan como contenido. La reescritura existente podría responder HTML para rutas inexistentes.

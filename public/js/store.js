@@ -1,734 +1,652 @@
-tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "neon-green": "#00FF66",
-                        "dark-bg": "#050508",
-                        "card-bg": "#0f131f",
-                        "card-border": "#1a2235"
-                    }
+/* Cellzone — borrador local para revisión. No publicar sin pruebas adicionales. */
+if (window.tailwind) {
+    window.tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    'neon-green': '#00FF66',
+                    'dark-bg': '#050508',
+                    'card-bg': '#0f131f',
+                    'card-border': '#1a2235'
                 }
             }
         }
-
-window.onerror = function(msg, url, lineNo, columnNo, error) {
-    alert("ERROR JS: " + msg + "\nLínea: " + lineNo);
-    return false;
-};
-window.onunhandledrejection = function(event) {
-    alert("PROMESA FALLIDA: " + (event.reason ? event.reason.message : "Error en Supabase"));
-};
-
-const SUPABASE_URL = "https://otnjxfzttdjihjcoximm.supabase.co";
-        const SUPABASE_KEY = "sb_publishable_ifoJPoL74pGM2B4cBxSLwg_7OrOGYy5";
-
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        let carrito = [];
-let monedaActual = localStorage.getItem('cellzone_moneda') || 'USD';
-let _ultimosProductos = [];
-        let favoritos = JSON.parse(localStorage.getItem('cellzone_favs') || '[]');
-        let categoriaActual = 'TODOS';
-        let timeoutBusqueda = null;
-        let todosLosResultadosActuales = [];
-
-        // Inicialización y verificación de sesión de Google
-        async function cargarDatosIniciales() {
-            actualizarContadorFavoritos();
-
-            // Escuchar automáticamente los cambios de sesión (ej. al volver de Google)
-            supabaseClient.auth.onAuthStateChange((event, session) => {
-                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-                    verificarSesionGoogle();
-                }
-            });
-
-            await verificarSesionGoogle();
-            await consultarSupabase();
-        }
-
-        async function verificarSesionGoogle() {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (session && session.user) {
-                const user = session.user;
-                const avatar = user.user_metadata?.avatar_url || 'https://via.placeholder.com/40';
-                const nombre = user.user_metadata?.full_name || user.email;
-
-                document.getElementById('authContainer').innerHTML = `
-                    <div class="flex items-center gap-2 bg-card-bg neon-border px-3 py-1.5 rounded-xl">
-                        <img src="${avatar}" alt="Avatar" class="w-7 h-7 rounded-full object-cover border border-neon-green">
-                        <span class="text-xs font-bold text-white hidden sm:inline max-w-[100px] truncate">${nombre}</span>
-                        <button onclick="mostrarPerfil()" class="text-[10px] text-neon-green hover:underline ml-1 cursor-pointer font-bold bg-transparent border-none p-0" title="Mi Perfil">Perfil</button>
-                        <button onclick="cerrarSesionGoogle()" class="text-[10px] text-red-400 hover:underline ml-1 cursor-pointer" title="Cerrar sesión">Salir</button>
-                    </div>
-                `;
-            } else {
-                document.getElementById('authContainer').innerHTML = `
-                    <button onclick="loginConGoogle()" class="px-3.5 py-2 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
-                        <span class="material-symbols-outlined text-[18px] text-neon-green">account_circle</span>
-                        <span class="hidden sm:inline">Ingresar con Google</span>
-                    </button>
-                `;
-            }
-        }
-
-        async function loginConGoogle() {
-            const { error } = await supabaseClient.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.href }
-            });
-            if (error) console.error("Error al iniciar sesión con Google:", error.message);
-        }
-
-        async function cerrarSesionGoogle() {
-            await supabaseClient.auth.signOut();
-            location.reload();
-        }
-
-        function irAInicio() {
-            const perfilDiv = document.getElementById('vistaPerfil');
-            if (perfilDiv) perfilDiv.classList.add('hidden');
-
-            const prodContainer = document.getElementById('productosContainer');
-            if (prodContainer) prodContainer.style.display = '';
-
-            const buscador = document.getElementById('buscadorContainer') || document.querySelector('.max-w-7xl');
-            if (buscador) buscador.style.display = '';
-
-            const sectionHero = document.querySelector('section');
-            if (sectionHero) sectionHero.style.display = '';
-            
-            const mainContent = document.querySelector('main');
-            if (mainContent) {
-                Array.from(mainContent.children).forEach(child => {
-                    if (child.id !== 'vistaPerfil') child.style.display = '';
-                });
-            }
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        
-        async function mostrarPerfil() {
-            // Ocultar TODO menos el header y el perfil
-            const prodContainer = document.getElementById('productosContainer');
-            if (prodContainer) prodContainer.style.display = 'none';
-
-            const buscador = document.getElementById('buscadorContainer') || document.querySelector('.max-w-7xl');
-            if (buscador) buscador.style.display = 'none';
-            
-            const sectionHero = document.querySelector('section');
-            if (sectionHero) sectionHero.style.display = 'none';
-            
-            const mainContent = document.querySelector('main');
-            if (mainContent) {
-                Array.from(mainContent.children).forEach(child => {
-                    if (child.id !== 'vistaPerfil') child.style.display = 'none';
-                });
-            }
-
-            const perfilDiv = document.getElementById('vistaPerfil');
-            if (perfilDiv) perfilDiv.classList.remove('hidden');
-            
-            const editSec = document.getElementById('seccionEditarPerfil');
-            if (editSec) editSec.classList.add('hidden');
-
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            const user = session.user;
-            const email = user.email || '';
-            const avatar = user.user_metadata?.avatar_url;
-            const nombreMeta = user.user_metadata?.full_name || email.split('@')[0];
-
-            document.getElementById('perfilEmailTxt').innerText = email;
-
-            const { data, error } = await supabaseClient
-                .from('profiles')
-                .select('full_name, phone, province, city, address')
-                .eq('id', user.id)
-                .single();
-
-            const fullName = data?.full_name || nombreMeta;
-            document.getElementById('perfilNombreTxt').innerText = fullName;
-            
-            const profFullName = document.getElementById('profFullName');
-            if (profFullName) profFullName.value = fullName;
-
-            if (avatar) {
-                const img = document.getElementById('perfilImgAvatar');
-                if (img) {
-                    img.src = avatar;
-                    img.classList.remove('hidden');
-                }
-                const initDiv = document.getElementById('perfilInitAvatar');
-                if (initDiv) initDiv.classList.add('hidden');
-            } else {
-                const initDiv = document.getElementById('perfilInitAvatar');
-                if (initDiv) {
-                    initDiv.innerText = fullName.charAt(0).toUpperCase();
-                    initDiv.classList.remove('hidden');
-                }
-                const img = document.getElementById('perfilImgAvatar');
-                if (img) img.classList.add('hidden');
-            }
-
-            if (data) {
-                const profPhone = document.getElementById('profPhone');
-                if (profPhone) profPhone.value = data.phone || '';
-                
-                const profProvince = document.getElementById('profProvince');
-                if (profProvince) profProvince.value = data.province || '';
-                
-                const profCity = document.getElementById('profCity');
-                if (profCity) profCity.value = data.city || '';
-                
-                const profAddress = document.getElementById('profAddress');
-                if (profAddress) profAddress.value = data.address || '';
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function cerrarPerfil() {
-            irAInicio();
-        }
-
-        function toggleEditarPerfil() {
-            const editSec = document.getElementById('seccionEditarPerfil');
-            if (editSec) editSec.classList.toggle('hidden');
-        }
-
-        async function guardarPerfil(e) {
-            e.preventDefault();
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            const updates = {
-                id: session.user.id,
-                full_name: document.getElementById('profFullName').value,
-                phone: document.getElementById('profPhone').value,
-                province: document.getElementById('profProvince').value,
-                city: document.getElementById('profCity').value,
-                address: document.getElementById('profAddress').value,
-                updated_at: new Date(),
-            };
-
-            const btn = document.getElementById('btnGuardarPerfil');
-            if (btn) btn.innerText = "Guardando...";
-            
-            let { error } = await supabaseClient.from('profiles').upsert(updates);
-            if (btn) btn.innerText = "Guardar cambios";
-
-            if (error) {
-                alert('Error al actualizar el perfil');
-            } else {
-                alert('¡Perfil actualizado con éxito!');
-                const perfilNombreTxt = document.getElementById('perfilNombreTxt');
-                if (perfilNombreTxt) perfilNombreTxt.innerText = updates.full_name;
-                toggleEditarPerfil();
-            }
-        }
-        
-        // Gestión de Favoritos
-        function toggleFavorito(id, event) {
-            if(event) event.stopPropagation();
-            const index = favoritos.indexOf(id);
-            if (index > -1) {
-                favoritos.splice(index, 1);
-                showToast('Eliminado de Favoritos', 'Producto removido de tu lista');
-            } else {
-                favoritos.push(id);
-                showToast('❤️ Añadido a Favoritos', 'Guardado en tu lista personal');
-            }
-            localStorage.setItem('cellzone_favs', JSON.stringify(favoritos));
-            actualizarContadorFavoritos();
-
-            // Si está en la vista de favoritos, refrescar
-            if (categoriaActual === 'FAVORITOS') {
-                consultarSupabase('', 'FAVORITOS');
-            } else {
-                renderizarProductos(todosLosResultadosActuales);
-            }
-        }
-
-        function actualizarContadorFavoritos() {
-            document.getElementById('favCountBadge').textContent = favoritos.length;
-        }
-
-        // Consultas a Supabase
-        async function consultarSupabase(termino = '', categoria = 'TODOS') {
-            try {
-                if (categoria === 'FAVORITOS') {
-                    if (favoritos.length === 0) {
-                        todosLosResultadosActuales = [];
-                        renderizarProductos([]);
-                        return;
-                    }
-                    // Consultar los productos favoritos por ID
-                    const { data, error } = await supabaseClient
-                        .from('productos')
-                        .select('*')
-                        .in('id', favoritos);
-                    
-                    if (error) throw error;
-                    procesarYRenderizar(data || [], termino);
-                    return;
-                }
-
-                let url = `${SUPABASE_URL}/rest/v1/productos?select=*`;
-                
-                if (termino.trim() !== '') {
-                    url += `&nombre=ilike.*${encodeURIComponent(termino.trim())}*`;
-                }
-
-                if (categoria && categoria !== 'TODOS') {
-                    url += `&categoria=eq.${encodeURIComponent(categoria)}`;
-                }
-
-                url += `&limit=60`;
-
-                const response = await fetch(url, {
-                    headers: {
-                        "apikey": SUPABASE_KEY,
-                        "Authorization": `Bearer ${SUPABASE_KEY}`
-                    }
-                });
-                const data = await response.json();
-                procesarYRenderizar(data || [], termino);
-
-            } catch (error) {
-                console.error("Error conectando con Supabase:", error);
-                document.getElementById('productGrid').innerHTML = '<div class="col-span-full text-center py-10 text-red-400">Error al conectar con la base de datos.</div>';
-            }
-        }
-
-        function procesarYRenderizar(data, termino) {
-            todosLosResultadosActuales = data.map(p => {
-                const baseUSD = parseFloat(p.precioUSD || p.precio_usd || p.precioARS || p.precio_ars || p.precio || 0);
-                const precioFinal = Math.round((baseUSD * 1.20) * 100) / 100;
-                return {
-                    id: p.id,
-                    nombre: p.nombre || 'Sin nombre',
-                    categoria: p.categoria || 'General',
-                    precio: precioFinal,
-                    imagen: p.imagen || 'https://via.placeholder.com/300',
-                    descripcion: p.descripcion || 'Sin descripción disponible.'
-                };
-            });
-
-            // Si hay término de búsqueda activo y estamos en vista favoritos, filtrar localmente también
-            let finalProcesados = todosLosResultadosActuales;
-            if (termino.trim() !== '' && categoriaActual === 'FAVORITOS') {
-                const t = termino.toLowerCase();
-                finalProcesados = todosLosResultadosActuales.filter(p => p.nombre.toLowerCase().includes(t));
-            }
-
-            renderizarProductos(finalProcesados);
-        }
-
-        function buscarProductosServidor() {
-            clearTimeout(timeoutBusqueda);
-            const texto = document.getElementById('buscador').value;
-            timeoutBusqueda = setTimeout(() => {
-                consultarSupabase(texto, categoriaActual);
-            }, 300);
-        }
-
-        function filtrarCategoria(cat, btn) {
-            categoriaActual = cat;
-            document.querySelectorAll('.cat-pill').forEach(b => {
-                b.className = "cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-card-bg text-gray-300 hover:text-white neon-border";
-            });
-            if(btn) {
-                if(cat === 'FAVORITOS') {
-                    btn.className = "cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-neon-green text-black shadow-sm flex items-center gap-1";
-                } else {
-                    btn.className = "cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-neon-green text-black shadow-sm";
-                }
-            }
-            const texto = document.getElementById('buscador').value;
-            consultarSupabase(texto, categoriaActual);
-        }
-
-        function renderizarProductos(productos) {
-    window._ultimosProductos = productos;
-            const grid = document.getElementById('productGrid');
-            document.getElementById('productCounter').textContent = `Mostrando ${productos.length} resultados`;
-
-            if (productos.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center py-20 text-gray-500">No se encontraron productos en esta sección.</div>';
-                return;
-            }
-
-            grid.innerHTML = productos.map(p => {
-                const esFavorito = favoritos.includes(String(p.id));
-                const favColor = esFavorito ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-400';
-                return `
-                    <article class="product-card group flex flex-col justify-between bg-card-bg neon-border rounded-2xl p-3.5 sm:p-4 hover:border-neon-green transition-all duration-300 relative overflow-hidden cursor-pointer shadow-lg" onclick="openProductModal('${p.id}')">
-                        <div>
-                            <div class="relative w-full aspect-square rounded-xl bg-black/40 overflow-hidden flex items-center justify-center p-3">
-                                <button onclick="toggleFavorito('${p.id}', event)" class="absolute top-2.5 right-2.5 z-10 p-2 rounded-full bg-black/60 backdrop-blur-md transition-all cursor-pointer ${favColor}">
-                                    <span class="material-symbols-outlined text-[20px]">favorite</span>
-                                </button>
-                                <img alt="${p.nombre}" class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" src="${p.imagen}" loading="lazy"/>
-                            </div>
-                            <div class="mt-3.5 space-y-1">
-                                <span class="text-[10px] text-neon-green uppercase font-mono tracking-wider">${p.categoria}</span>
-                                <h2 class="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug">${p.nombre}</h2>
-                            </div>
-                        </div>
-                        <div class="mt-4 pt-3 border-t border-card-border space-y-3">
-                            <div class="font-extrabold text-base sm:text-lg text-neon-green">${formatearAmbosPrecios(p)}</div>
-                            <button onclick="event.stopPropagation(); agregarAlCarrito('${p.id}')" class="w-full py-2.5 px-3 rounded-xl bg-neon-green hover:brightness-110 text-black font-extrabold text-xs shadow-[0_0_10px_rgba(0,255,102,0.3)] transition-all flex items-center justify-center gap-1.5 cursor-pointer">
-                                <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
-                                <span>AGREGAR</span>
-                            </button>
-                        </div>
-                    </article>
-                `;
-            }).join('');
-        }
-
-        function openProductModal(id) {
-            const p = todosLosResultadosActuales.find(item => item.id == id);
-            if (!p) return;
-
-            document.getElementById('modalContentContainer').innerHTML = `
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="aspect-square bg-black/40 rounded-xl flex items-center justify-center p-4 neon-border">
-                        <img src="${p.imagen}" alt="${p.nombre}" class="max-h-full object-contain">
-                    </div>
-                    <div class="flex flex-col justify-between space-y-4">
-                        <div>
-                            <span class="text-xs text-neon-green uppercase font-mono bg-neon-green/10 px-3 py-1 rounded-full border border-neon-green/30">${p.categoria}</span>
-                            <h2 class="text-xl font-bold text-white mt-3">${p.nombre}</h2>
-                            <div class="text-2xl font-extrabold text-neon-green mt-2">${formatearAmbosPrecios(p)}</div>
-                            <p class="text-sm text-gray-300 mt-3 leading-relaxed bg-black/30 p-3.5 rounded-xl border border-card-border">${p.descripcion}</p>
-                        </div>
-                        <div class="space-y-3">
-                            <button onclick="agregarAlCarrito('${p.id}'); closeProductModal();" class="w-full py-3.5 rounded-xl bg-card-border hover:bg-neon-green hover:text-black text-white font-bold transition-all cursor-pointer neon-border">
-                                Añadir al Carrito
-                            </button>
-                            <button onclick="comprarItemWhatsApp('${p.nombre.replace(/'/g, "")}', ${formatearAmbosPrecios(p)})" class="w-full py-3.5 rounded-xl bg-neon-green text-black font-extrabold shadow-[0_0_15px_rgba(0,255,102,0.4)] hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 transition-all">
-                                <span class="material-symbols-outlined text-[20px]">chat</span>
-                                Consultar por WhatsApp
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            const backdrop = document.getElementById('productModalBackdrop');
-            backdrop.classList.remove('hidden');
-            backdrop.classList.add('flex');
-        }
-
-        function closeProductModal() {
-            const backdrop = document.getElementById('productModalBackdrop');
-            backdrop.classList.remove('flex');
-            backdrop.classList.add('hidden');
-        }
-
-        function agregarAlCarrito(id) {
-            const producto = todosLosResultadosActuales.find(item => item.id == id);
-            if (!producto) return;
-            
-            const existente = carrito.find(item => item.id == id);
-            if (existente) {
-                existente.cantidad++;
-            } else {
-                carrito.push({ ...producto, cantidad: 1 });
-            }
-            actualizarCarritoUI();
-            showToast('¡Añadido al Carrito!', producto.nombre);
-            toggleCartDrawer(true);
-        }
-
-        function eliminarDelCarrito(id) {
-            carrito = carrito.filter(item => item.id != id);
-            actualizarCarritoUI();
-        }
-
-        function cambiarCantidad(id, delta) {
-            const item = carrito.find(i => i.id == id);
-            if(!item) return;
-            item.cantidad += delta;
-            if(item.cantidad <= 0) {
-                eliminarDelCarrito(id);
-            } else {
-                actualizarCarritoUI();
-            }
-        }
-
-        function actualizarCarritoUI() {
-            const totalItems = carrito.reduce((sum, item) => sum + item.cantidad, 0);
-            document.getElementById('headerCartCount').textContent = totalItems;
-            document.getElementById('cartDrawerCount').textContent = `(${totalItems})`;
-
-            const container = document.getElementById('cartItemsContainer');
-            if (carrito.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 mt-10">Tu carrito está vacío</p>';
-                document.getElementById('cartTotal').textContent = '$0.00';
-                return;
-            }
-
-            let total = 0;
-            container.innerHTML = carrito.map(item => {
-                const subtotal = item.precio * item.cantidad;
-                total += subtotal;
-                return `
-                    <div class="py-3 flex items-center justify-between gap-3">
-                        <div class="flex-1 min-w-0">
-                            <h4 class="text-xs font-semibold text-white truncate">${item.nombre}</h4>
-                            <p class="text-xs text-neon-green">${formatearAmbosPrecios(p)} x ${item.cantidad}</p>
-                            <div class="flex items-center gap-2 mt-2">
-                                <button onclick="cambiarCantidad('${item.id}', -1)" class="w-6 h-6 rounded bg-card-border font-bold hover:bg-neon-green hover:text-black transition-all">-</button>
-                                <span class="text-xs font-semibold text-white">${item.cantidad}</span>
-                                <button onclick="cambiarCantidad('${item.id}', 1)" class="w-6 h-6 rounded bg-card-border font-bold hover:bg-neon-green hover:text-black transition-all">+</button>
-                                <button onclick="eliminarDelCarrito('${item.id}')" class="text-red-400 text-xs ml-auto hover:underline">Eliminar</button>
-                            </div>
-                        </div>
-                        <div class="font-bold text-sm text-neon-green">${formatearAmbosPrecios(p)}</div>
-                    </div>
-                `;
-            }).join('');
-
-            document.getElementById('cartTotal').textContent = `${formatearAmbosPrecios(p)}`;
-        }
-
-        function toggleCartDrawer(open) {
-            const panel = document.getElementById('cartDrawerPanel');
-            const backdrop = document.getElementById('cartDrawerBackdrop');
-            if (open) {
-                backdrop.classList.remove('hidden');
-                setTimeout(() => panel.classList.remove('translate-x-full'), 10);
-            } else {
-                panel.classList.add('translate-x-full');
-                setTimeout(() => backdrop.classList.add('hidden'), 300);
-            }
-        }
-
-        function checkoutViaWhatsApp() {
-            if (carrito.length === 0) return;
-            let mensaje = "¡Hola CELLZONE IMPORTADOS! Deseo hacer el siguiente pedido:\n\n";
-            let total = 0;
-            carrito.forEach(i => {
-                mensaje += `- ${i.cantidad}x ${i.nombre} (${formatearAmbosPrecios(p)})\n`;
-                total += i.precio * i.cantidad;
-            });
-            mensaje += `\n*Total a pagar: ${formatearAmbosPrecios(p)}*`;
-            window.open(`https://wa.me/595995677862?text=${encodeURIComponent(mensaje)}`, '_blank');
-        }
-
-        function comprarItemWhatsApp(nombre, precio) {
-            const mensaje = `¡Hola CELLZONE! Me interesa este producto:\n\n*${nombre}*\nPrecio: ${formatearAmbosPrecios(p)}\n\n¿Tienen stock disponible?`;
-            window.open(`https://wa.me/595995677862?text=${encodeURIComponent(mensaje)}`, '_blank');
-        }
-
-        function showToast(title, subtitle) {
-            const toast = document.getElementById('toastNotification');
-            document.getElementById('toastTitle').textContent = title;
-            document.getElementById('toastSubtitle').textContent = subtitle;
-            toast.classList.remove('opacity-0', 'translate-y-24');
-            setTimeout(() => toast.classList.add('opacity-0', 'translate-y-24'), 2500);
-        }
-
-        cargarDatosIniciales();
-
-function irAInicio() {
-            const perfilDiv = document.getElementById('vistaPerfil');
-            if (perfilDiv) perfilDiv.classList.add('hidden');
-            
-            // Restaurar todos los contenedores principales de la tienda
-            const mainElements = document.querySelectorAll('main, #productosContainer, .max-w-7xl, section');
-            mainElements.forEach(el => {
-                if (el.id !== 'vistaPerfil' && !el.contains(perfilDiv)) {
-                    el.style.display = '';
-                }
-            });
-            
-            const prodContainer = document.getElementById('productosContainer');
-            if (prodContainer) prodContainer.style.display = '';
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        async function mostrarPerfil() {
-            const mainElements = document.querySelectorAll('main, #productosContainer, .max-w-7xl, section');
-            mainElements.forEach(el => {
-                if (el.id !== 'vistaPerfil' && !el.contains(document.getElementById('vistaPerfil'))) {
-                    if (!el.querySelector('#authContainer')) {
-                        el.style.display = 'none';
-                    }
-                }
-            });
-            
-            const prodContainer = document.getElementById('productosContainer');
-            if (prodContainer) prodContainer.style.display = 'none';
-
-            const perfilDiv = document.getElementById('vistaPerfil');
-            if (perfilDiv) perfilDiv.classList.remove('hidden');
-            
-            document.getElementById('seccionEditarPerfil').classList.add('hidden');
-
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            const user = session.user;
-            const email = user.email || '';
-            const avatar = user.user_metadata?.avatar_url;
-            const nombreMeta = user.user_metadata?.full_name || email.split('@')[0];
-
-            document.getElementById('perfilEmailTxt').innerText = email;
-
-            const { data, error } = await supabaseClient
-                .from('profiles')
-                .select('full_name, phone, province, city, address')
-                .eq('id', user.id)
-                .single();
-
-            const fullName = data?.full_name || nombreMeta;
-            document.getElementById('perfilNombreTxt').innerText = fullName;
-            document.getElementById('profFullName').value = fullName;
-
-            if (avatar) {
-                const img = document.getElementById('perfilImgAvatar');
-                img.src = avatar;
-                img.classList.remove('hidden');
-                document.getElementById('perfilInitAvatar').classList.add('hidden');
-            } else {
-                const initDiv = document.getElementById('perfilInitAvatar');
-                initDiv.innerText = fullName.charAt(0).toUpperCase();
-                initDiv.classList.remove('hidden');
-                document.getElementById('perfilImgAvatar').classList.add('hidden');
-            }
-
-            if (data) {
-                document.getElementById('profPhone').value = data.phone || '';
-                document.getElementById('profProvince').value = data.province || '';
-                document.getElementById('profCity').value = data.city || '';
-                document.getElementById('profAddress').value = data.address || '';
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function cerrarPerfil() {
-            irAInicio();
-        }
-
-        function toggleEditarPerfil() {
-            const editSec = document.getElementById('seccionEditarPerfil');
-            editSec.classList.toggle('hidden');
-        }
-
-        async function guardarPerfil(e) {
-            e.preventDefault();
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) return;
-
-            const updates = {
-                id: session.user.id,
-                full_name: document.getElementById('profFullName').value,
-                phone: document.getElementById('profPhone').value,
-                province: document.getElementById('profProvince').value,
-                city: document.getElementById('profCity').value,
-                address: document.getElementById('profAddress').value,
-                updated_at: new Date(),
-            };
-
-            const btn = document.getElementById('btnGuardarPerfil');
-            btn.innerText = "Guardando...";
-            
-            let { error } = await supabaseClient.from('profiles').upsert(updates);
-            btn.innerText = "Guardar cambios";
-
-            if (error) {
-                alert('Error al actualizar el perfil');
-            } else {
-                alert('¡Perfil actualizado con éxito!');
-                document.getElementById('perfilNombreTxt').innerText = updates.full_name;
-                toggleEditarPerfil();
-            }
-        }
-
-document.addEventListener("DOMContentLoaded", () => {
-    // 1. Forzar que el logo de CELLZONE lleve al inicio siempre
-    const enlaces = document.querySelectorAll('header a');
-    enlaces.forEach(a => {
-        if(a.innerText.toUpperCase().includes('CELL') || a.innerText.toUpperCase().includes('ZONE')) {
-            a.onclick = (e) => {
-                e.preventDefault();
-                if(typeof irAInicio === 'function') irAInicio();
-            };
-        }
+    };
+}
+
+const SUPABASE_URL = 'https://otnjxfzttdjihjcoximm.supabase.co';
+// Esta es una clave publicable, no una clave de servicio. La seguridad depende de RLS.
+const SUPABASE_KEY = 'sb_publishable_ifoJPoL74pGM2B4cBxSLwg_7OrOGYy5';
+const NUMERO_WHATSAPP = '595995677862';
+const IMAGEN_SIN_FOTO = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"%3E%3Crect width="300" height="300" fill="%230f131f"/%3E%3Cpath d="M80 190l45-50 30 30 20-20 45 40" fill="none" stroke="%234b5563" stroke-width="8"/%3E%3Ccircle cx="105" cy="100" r="14" fill="%234b5563"/%3E%3Ctext x="150" y="240" text-anchor="middle" fill="%239ca3af" font-family="sans-serif" font-size="18"%3ESin imagen%3C/text%3E%3C/svg%3E';
+
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let carrito = [];
+let monedaActual = obtenerGuardado('cellzone_moneda') === 'ARS' ? 'ARS' : 'USD';
+let favoritos = leerFavoritos();
+let categoriaActual = 'TODOS';
+let timeoutBusqueda = null;
+let timeoutToast = null;
+let consultaActual = 0;
+let todosLosResultadosActuales = [];
+let productosVisibles = [];
+let yaCargaronProductos = false;
+let productoModalAbierto = null;
+
+function obtenerGuardado(clave) {
+    try { return localStorage.getItem(clave); } catch (_) { return null; }
+}
+
+function guardarLocal(clave, valor) {
+    try { localStorage.setItem(clave, valor); } catch (_) { /* Se conserva durante la sesión. */ }
+}
+
+function leerFavoritos() {
+    try {
+        const valor = JSON.parse(obtenerGuardado('cellzone_favs') || '[]');
+        return Array.isArray(valor) ? [...new Set(valor.map(String))] : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function crearElemento(etiqueta, clases = '', texto) {
+    const elemento = document.createElement(etiqueta);
+    if (clases) elemento.className = clases;
+    if (texto !== undefined && texto !== null) elemento.textContent = String(texto);
+    return elemento;
+}
+
+function crearIcono(nombre, clases = '') {
+    return crearElemento('span', `material-symbols-outlined ${clases}`.trim(), nombre);
+}
+
+// Se aceptan solo URLs web. Nunca se usa como HTML o como manejador de eventos.
+function urlImagenSegura(valor) {
+    if (typeof valor !== 'string' || !valor.trim()) return null;
+    try {
+        const url = new URL(valor, window.location.origin);
+        return (url.protocol === 'https:' || url.protocol === 'http:') ? url.href : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function crearImagen(valor, descripcion, clases) {
+    const imagen = crearElemento('img', clases);
+    imagen.alt = descripcion;
+    imagen.loading = 'lazy';
+    imagen.src = urlImagenSegura(valor) || IMAGEN_SIN_FOTO;
+    imagen.addEventListener('error', () => {
+        if (imagen.src !== IMAGEN_SIN_FOTO) imagen.src = IMAGEN_SIN_FOTO;
+    }, { once: true });
+    return imagen;
+}
+
+function numeroPrecio(valor) {
+    if (valor === null || valor === undefined || valor === '') return null;
+    const numero = Number(valor);
+    if (!Number.isFinite(numero) || numero <= 0) return null;
+    const centavos = Math.round((numero + Number.EPSILON * Math.abs(numero)) * 100);
+    if (!Number.isSafeInteger(centavos) || centavos <= 0) return null;
+    return centavos / 100;
+}
+
+function primerPrecioValido(...valores) {
+    for (const valor of valores) {
+        const numero = numeroPrecio(valor);
+        if (numero !== null) return numero;
+    }
+    return null;
+}
+
+function normalizarProducto(p) {
+    return {
+        id: String(p.id),
+        nombre: String(p.nombre || 'Sin nombre'),
+        categoria: String(p.categoria || 'General'),
+        // En los datos actuales, precio equivale a USD. No usar ARS como USD.
+        precio_usd: primerPrecioValido(p.precio_usd, p.precioUSD, p.precio),
+        precio_ars: primerPrecioValido(p.precio_ars, p.precioARS),
+        imagen: typeof p.imagen === 'string' ? p.imagen : '',
+        descripcion: String(p.descripcion || 'Sin descripción disponible.')
+    };
+}
+
+function precioEnMoneda(producto, moneda = monedaActual) {
+    return moneda === 'ARS' ? producto.precio_ars : producto.precio_usd;
+}
+
+function formatearMonto(valor, moneda) {
+    if (valor === null || !Number.isFinite(valor)) return `${moneda}: consultar`;
+    const numero = new Intl.NumberFormat('es-AR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(valor);
+    return `${moneda} ${numero}`;
+}
+
+function crearBloquePrecios(producto) {
+    const bloque = crearElemento('div', 'flex flex-col leading-tight gap-1');
+    for (const moneda of ['USD', 'ARS']) {
+        const activa = moneda === monedaActual;
+        const clases = activa
+            ? 'text-neon-green font-extrabold text-base sm:text-lg'
+            : 'text-gray-400 text-xs font-semibold';
+        bloque.append(crearElemento('span', clases, formatearMonto(precioEnMoneda(producto, moneda), moneda)));
+    }
+    return bloque;
+}
+
+function totalCarrito() {
+    let centavos = 0;
+    for (const item of carrito) {
+        const precio = precioEnMoneda(item);
+        if (precio === null || !Number.isSafeInteger(item.cantidad) || item.cantidad < 1) return null;
+        const subtotal = Math.round(precio * 100) * item.cantidad;
+        if (!Number.isSafeInteger(subtotal) || !Number.isSafeInteger(centavos + subtotal)) return null;
+        centavos += subtotal;
+    }
+    return centavos / 100;
+}
+
+function nombreParaMensaje(nombre) {
+    return String(nombre).replace(/\s+/g, ' ').trim().slice(0, 300) || 'Producto';
+}
+
+function abrirWhatsApp(mensaje) {
+    const url = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function showToast(titulo, subtitulo) {
+    const toast = document.getElementById('toastNotification');
+    if (!toast) return;
+    document.getElementById('toastTitle').textContent = titulo;
+    document.getElementById('toastSubtitle').textContent = subtitulo;
+    toast.classList.remove('opacity-0', 'translate-y-24');
+    clearTimeout(timeoutToast);
+    timeoutToast = setTimeout(() => toast.classList.add('opacity-0', 'translate-y-24'), 3000);
+}
+
+async function cargarDatosIniciales() {
+    actualizarContadorFavoritos();
+    cambiarMoneda(monedaActual);
+    supabaseClient.auth.onAuthStateChange(() => {
+        // No consultar la sesión mientras el cliente de Auth tiene el bloqueo del evento.
+        setTimeout(() => verificarSesionGoogle(), 0);
     });
+    await verificarSesionGoogle();
+    await consultarSupabase();
+}
 
-    // 2. Forzar que el inicio de sesión use tu dominio oficial
-    window.loginConGoogle = async function() {
+async function verificarSesionGoogle() {
+    let session = null;
+    try {
+        const respuesta = await supabaseClient.auth.getSession();
+        if (respuesta.error) throw respuesta.error;
+        session = respuesta.data && respuesta.data.session;
+    } catch (error) {
+        console.error('No se pudo comprobar la sesión.', error);
+    }
+
+    const container = document.getElementById('authContainer');
+    container.replaceChildren();
+    if (session && session.user) {
+        const user = session.user;
+        const nombre = String(user.user_metadata?.full_name || user.email || 'Mi cuenta');
+        const fila = crearElemento('div', 'flex items-center gap-1 sm:gap-2 bg-card-bg neon-border px-1.5 sm:px-3 py-1.5 rounded-xl');
+        const perfil = crearElemento('button', 'flex items-center gap-1 text-[10px] text-neon-green hover:underline cursor-pointer font-bold bg-transparent border-none p-0');
+        perfil.type = 'button';
+        perfil.setAttribute('aria-label', 'Perfil');
+        const avatar = urlImagenSegura(user.user_metadata?.avatar_url);
+        if (avatar) perfil.append(crearImagen(avatar, 'Avatar', 'w-7 h-7 rounded-full object-cover border border-neon-green'));
+        else perfil.append(crearIcono('account_circle', 'text-[22px] text-neon-green'));
+        perfil.append(crearElemento('span', 'text-xs font-bold text-white hidden sm:inline max-w-[100px] truncate', nombre));
+        perfil.append(crearElemento('span', 'hidden sm:inline', 'Perfil'));
+        perfil.addEventListener('click', mostrarPerfil);
+        const salir = crearElemento('button', 'flex items-center text-[10px] text-red-400 hover:underline cursor-pointer');
+        salir.type = 'button';
+        salir.setAttribute('aria-label', 'Cerrar sesión');
+        salir.append(crearIcono('logout', 'text-[18px] sm:hidden'), crearElemento('span', 'hidden sm:inline', 'Salir'));
+        salir.addEventListener('click', cerrarSesionGoogle);
+        fila.append(perfil, salir);
+        container.append(fila);
+    } else {
+        const boton = crearElemento('button', 'px-3.5 py-2 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer');
+        boton.type = 'button';
+        boton.setAttribute('aria-label', 'Ingresar con Google');
+        boton.append(crearIcono('account_circle', 'text-[18px] text-neon-green'));
+        boton.append(crearElemento('span', 'hidden sm:inline', 'Ingresar con Google'));
+        boton.addEventListener('click', loginConGoogle);
+        container.append(boton);
+    }
+}
+
+async function loginConGoogle() {
+    try {
         const { error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: { redirectTo: window.location.origin }
         });
-        if (error) alert("Error al conectar con Google: " + error.message);
-    };
+        if (error) throw error;
+    } catch (error) {
+        console.error('No se pudo iniciar sesión con Google.', error);
+        showToast('No se pudo iniciar sesión', 'Intentá nuevamente.');
+    }
+}
 
-    // 3. Obligar a Supabase a actualizar los botones apenas detecte la sesión
-    supabaseClient.auth.onAuthStateChange((event, session) => {
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'USER_UPDATED') {
-            if(typeof verificarSesionGoogle === 'function') verificarSesionGoogle();
+async function cerrarSesionGoogle() {
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+        irAInicio();
+        await verificarSesionGoogle();
+    } catch (error) {
+        console.error('No se pudo cerrar la sesión.', error);
+        showToast('No se pudo cerrar la sesión', 'Intentá nuevamente.');
+    }
+}
+
+function irAInicio() {
+    const perfil = document.getElementById('vistaPerfil');
+    const principal = document.querySelector('main');
+    if (perfil) perfil.classList.add('hidden');
+    if (principal) principal.style.display = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function mostrarPerfil() {
+    try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) throw error;
+        const session = data && data.session;
+        if (!session || !session.user) {
+            showToast('Iniciá sesión', 'Necesitás ingresar para ver tu perfil.');
+            return;
         }
+        const user = session.user;
+        const { data: perfil, error: errorPerfil } = await supabaseClient
+            .from('profiles')
+            .select('full_name, phone, province, city, address')
+            .eq('id', user.id)
+            .maybeSingle();
+        if (errorPerfil) throw errorPerfil;
+
+        const email = String(user.email || '');
+        const nombre = String(perfil?.full_name || user.user_metadata?.full_name || email.split('@')[0] || 'Cliente');
+        document.getElementById('perfilEmailTxt').textContent = email;
+        document.getElementById('perfilNombreTxt').textContent = nombre;
+        document.getElementById('profFullName').value = nombre;
+        document.getElementById('profPhone').value = perfil?.phone || '';
+        document.getElementById('profProvince').value = perfil?.province || '';
+        document.getElementById('profCity').value = perfil?.city || '';
+        document.getElementById('profAddress').value = perfil?.address || '';
+
+        const avatar = urlImagenSegura(user.user_metadata?.avatar_url);
+        const img = document.getElementById('perfilImgAvatar');
+        const inicial = document.getElementById('perfilInitAvatar');
+        if (avatar) {
+            img.src = avatar;
+            img.classList.remove('hidden');
+            inicial.classList.add('hidden');
+        } else {
+            img.removeAttribute('src');
+            img.classList.add('hidden');
+            inicial.textContent = nombre.charAt(0).toUpperCase();
+            inicial.classList.remove('hidden');
+        }
+        document.getElementById('seccionEditarPerfil').classList.add('hidden');
+        document.querySelector('main').style.display = 'none';
+        document.getElementById('vistaPerfil').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+        console.error('No se pudo cargar el perfil.', error);
+        showToast('No se pudo cargar el perfil', 'Intentá nuevamente.');
+    }
+}
+
+function cerrarPerfil() { irAInicio(); }
+
+function toggleEditarPerfil() {
+    document.getElementById('seccionEditarPerfil').classList.toggle('hidden');
+}
+
+async function guardarPerfil(event) {
+    event.preventDefault();
+    const boton = document.getElementById('btnGuardarPerfil');
+    try {
+        const { data, error } = await supabaseClient.auth.getSession();
+        if (error) throw error;
+        if (!data?.session?.user) {
+            showToast('Iniciá sesión', 'Necesitás ingresar para guardar el perfil.');
+            return;
+        }
+        const actualizacion = {
+            id: data.session.user.id,
+            full_name: document.getElementById('profFullName').value,
+            phone: document.getElementById('profPhone').value,
+            province: document.getElementById('profProvince').value,
+            city: document.getElementById('profCity').value,
+            address: document.getElementById('profAddress').value,
+            updated_at: new Date().toISOString()
+        };
+        boton.disabled = true;
+        boton.textContent = 'Guardando...';
+        const resultado = await supabaseClient.from('profiles').upsert(actualizacion);
+        if (resultado.error) throw resultado.error;
+        document.getElementById('perfilNombreTxt').textContent = actualizacion.full_name;
+        toggleEditarPerfil();
+        showToast('Perfil actualizado', 'Tus datos se guardaron correctamente.');
+    } catch (error) {
+        console.error('No se pudo guardar el perfil.', error);
+        showToast('No se pudo guardar el perfil', 'Intentá nuevamente.');
+    } finally {
+        boton.disabled = false;
+        boton.textContent = 'Guardar cambios';
+    }
+}
+
+function actualizarContadorFavoritos() {
+    document.getElementById('favCountBadge').textContent = favoritos.length;
+}
+
+function toggleFavorito(id, event) {
+    if (event) event.stopPropagation();
+    id = String(id);
+    const indice = favoritos.indexOf(id);
+    if (indice >= 0) {
+        favoritos.splice(indice, 1);
+        showToast('Eliminado de favoritos', 'Producto removido de tu lista.');
+    } else {
+        favoritos.push(id);
+        showToast('Añadido a favoritos', 'Guardado en tu lista personal.');
+    }
+    guardarLocal('cellzone_favs', JSON.stringify(favoritos));
+    actualizarContadorFavoritos();
+    if (categoriaActual === 'FAVORITOS') {
+        consultarSupabase(document.getElementById('buscador').value, 'FAVORITOS');
+    } else {
+        renderizarProductos(productosVisibles);
+    }
+}
+
+async function consultarSupabase(termino = '', categoria = 'TODOS') {
+    const numeroConsulta = ++consultaActual;
+    try {
+        let datos;
+        if (categoria === 'FAVORITOS') {
+            if (!favoritos.length) {
+                datos = [];
+            } else {
+                const { data, error } = await supabaseClient.from('productos').select('*').in('id', favoritos);
+                if (error) throw error;
+                datos = data || [];
+            }
+        } else {
+            const url = new URL(`${SUPABASE_URL}/rest/v1/productos`);
+            url.searchParams.set('select', '*');
+            if (termino.trim()) url.searchParams.set('nombre', `ilike.*${termino.trim()}*`);
+            if (categoria && categoria !== 'TODOS') url.searchParams.set('categoria', `eq.${categoria}`);
+            url.searchParams.set('limit', '60');
+            const response = await fetch(url, {
+                headers: { apikey: SUPABASE_KEY }
+            });
+            if (!response.ok) throw new Error(`Respuesta ${response.status}`);
+            datos = await response.json();
+        }
+        if (!Array.isArray(datos)) throw new Error('Respuesta de productos inválida.');
+        if (numeroConsulta !== consultaActual) return;
+        procesarYRenderizar(datos, termino, categoria);
+    } catch (error) {
+        if (numeroConsulta !== consultaActual) return;
+        console.error('Error al consultar el catálogo.', error);
+        todosLosResultadosActuales = [];
+        productosVisibles = [];
+        yaCargaronProductos = false;
+        document.getElementById('productCounter').textContent = 'No se pudo cargar el catálogo';
+        document.getElementById('productGrid').replaceChildren(
+            crearElemento('div', 'col-span-full text-center py-10 text-red-400', 'No se pudo conectar con el catálogo. Intentá nuevamente.')
+        );
+    }
+}
+
+function procesarYRenderizar(datos, termino = '', categoria = categoriaActual) {
+    todosLosResultadosActuales = datos
+        .filter(p => p && p.id !== null && p.id !== undefined)
+        .map(normalizarProducto);
+    const busqueda = termino.trim().toLocaleLowerCase('es');
+    productosVisibles = categoria === 'FAVORITOS' && busqueda
+        ? todosLosResultadosActuales.filter(p => p.nombre.toLocaleLowerCase('es').includes(busqueda))
+        : todosLosResultadosActuales;
+    yaCargaronProductos = true;
+    renderizarProductos(productosVisibles);
+}
+
+function buscarProductosServidor() {
+    clearTimeout(timeoutBusqueda);
+    const texto = document.getElementById('buscador').value;
+    timeoutBusqueda = setTimeout(() => consultarSupabase(texto, categoriaActual), 300);
+}
+
+function filtrarCategoria(categoria, boton) {
+    categoriaActual = categoria;
+    document.querySelectorAll('.cat-pill').forEach(b => {
+        b.className = 'cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-card-bg text-gray-300 hover:text-white neon-border';
     });
-    
-    // 4. Doble chequeo de seguridad 1 segundo después de cargar la web
-    setTimeout(() => {
-        if(typeof verificarSesionGoogle === 'function') verificarSesionGoogle();
-    }, 1000);
-});
+    if (boton) boton.className = 'cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-neon-green text-black shadow-sm';
+    consultarSupabase(document.getElementById('buscador').value, categoriaActual);
+}
+
+function renderizarProductos(productos) {
+    productosVisibles = productos;
+    const grid = document.getElementById('productGrid');
+    document.getElementById('productCounter').textContent = `Mostrando ${productos.length} resultados`;
+    grid.replaceChildren();
+    if (!productos.length) {
+        grid.append(crearElemento('div', 'col-span-full text-center py-20 text-gray-500', 'No se encontraron productos en esta sección.'));
+        return;
+    }
+    const fragmento = document.createDocumentFragment();
+    for (const p of productos) {
+        const articulo = crearElemento('article', 'product-card group flex flex-col justify-between bg-card-bg neon-border rounded-2xl p-3.5 sm:p-4 hover:border-neon-green transition-all duration-300 relative overflow-hidden cursor-pointer shadow-lg');
+        articulo.tabIndex = 0;
+        articulo.setAttribute('role', 'button');
+        articulo.setAttribute('aria-label', `Ver detalles de ${p.nombre}`);
+        articulo.addEventListener('click', () => openProductModal(p.id));
+        articulo.addEventListener('keydown', event => {
+            if (event.target === articulo && (event.key === 'Enter' || event.key === ' ')) {
+                event.preventDefault();
+                openProductModal(p.id);
+            }
+        });
+        const superior = crearElemento('div');
+        const marco = crearElemento('div', 'relative w-full aspect-square rounded-xl bg-black/40 overflow-hidden flex items-center justify-center p-3');
+        const esFavorito = favoritos.includes(p.id);
+        const colorFav = esFavorito ? 'text-red-500 fill-red-500' : 'text-gray-400 hover:text-red-400';
+        const botonFav = crearElemento('button', `absolute top-2.5 right-2.5 z-10 p-2 rounded-full bg-black/60 backdrop-blur-md transition-all cursor-pointer ${colorFav}`);
+        botonFav.type = 'button';
+        botonFav.setAttribute('aria-label', esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos');
+        botonFav.setAttribute('aria-pressed', String(esFavorito));
+        botonFav.append(crearIcono('favorite', 'text-[20px]'));
+        botonFav.addEventListener('click', event => toggleFavorito(p.id, event));
+        marco.append(botonFav, crearImagen(p.imagen, p.nombre, 'w-full h-full object-contain group-hover:scale-105 transition-transform duration-300'));
+        const info = crearElemento('div', 'mt-3.5 space-y-1');
+        info.append(crearElemento('span', 'text-[10px] text-neon-green uppercase font-mono tracking-wider', p.categoria));
+        info.append(crearElemento('h2', 'text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug', p.nombre));
+        superior.append(marco, info);
+        const inferior = crearElemento('div', 'mt-4 pt-3 border-t border-card-border space-y-3');
+        inferior.append(crearBloquePrecios(p));
+        const agregar = crearElemento('button', 'w-full py-2.5 px-3 rounded-xl bg-neon-green hover:brightness-110 text-black font-extrabold text-xs shadow-[0_0_10px_rgba(0,255,102,0.3)] transition-all flex items-center justify-center gap-1.5 cursor-pointer');
+        agregar.type = 'button';
+        agregar.append(crearIcono('add_shopping_cart', 'text-[16px]'), crearElemento('span', '', 'AGREGAR'));
+        agregar.addEventListener('click', event => { event.stopPropagation(); agregarAlCarrito(p.id); });
+        inferior.append(agregar);
+        articulo.append(superior, inferior);
+        fragmento.append(articulo);
+    }
+    grid.append(fragmento);
+}
+
+function openProductModal(id) {
+    const producto = todosLosResultadosActuales.find(item => item.id === String(id));
+    if (!producto) return;
+    productoModalAbierto = producto.id;
+    const container = document.getElementById('modalContentContainer');
+    container.replaceChildren();
+    const layout = crearElemento('div', 'grid grid-cols-1 md:grid-cols-2 gap-6');
+    const marco = crearElemento('div', 'aspect-square bg-black/40 rounded-xl flex items-center justify-center p-4 neon-border');
+    marco.append(crearImagen(producto.imagen, producto.nombre, 'max-h-full object-contain'));
+    const info = crearElemento('div', 'flex flex-col justify-between space-y-4');
+    const datos = crearElemento('div');
+    datos.append(crearElemento('span', 'text-xs text-neon-green uppercase font-mono bg-neon-green/10 px-3 py-1 rounded-full border border-neon-green/30', producto.categoria));
+    datos.append(crearElemento('h2', 'text-xl font-bold text-white mt-3', producto.nombre));
+    const precios = crearElemento('div', 'text-2xl font-extrabold text-neon-green mt-2');
+    precios.append(crearBloquePrecios(producto));
+    datos.append(precios);
+    datos.append(crearElemento('p', 'text-sm text-gray-300 mt-3 leading-relaxed bg-black/30 p-3.5 rounded-xl border border-card-border', producto.descripcion));
+    const acciones = crearElemento('div', 'space-y-3');
+    const agregar = crearElemento('button', 'w-full py-3.5 rounded-xl bg-card-border hover:bg-neon-green hover:text-black text-white font-bold transition-all cursor-pointer neon-border', 'Añadir al Carrito');
+    agregar.type = 'button';
+    agregar.addEventListener('click', () => { closeProductModal(); agregarAlCarrito(producto.id); });
+    const whatsapp = crearElemento('button', 'w-full py-3.5 rounded-xl bg-neon-green text-black font-extrabold shadow-[0_0_15px_rgba(0,255,102,0.4)] hover:brightness-110 cursor-pointer flex items-center justify-center gap-2 transition-all');
+    whatsapp.type = 'button';
+    whatsapp.append(crearIcono('chat', 'text-[20px]'), crearElemento('span', '', 'Consultar por WhatsApp'));
+    whatsapp.addEventListener('click', () => comprarItemWhatsApp(producto.id));
+    acciones.append(agregar, whatsapp);
+    info.append(datos, acciones);
+    layout.append(marco, info);
+    container.append(layout);
+    const backdrop = document.getElementById('productModalBackdrop');
+    backdrop.classList.remove('hidden');
+    backdrop.classList.add('flex');
+}
+
+function closeProductModal() {
+    productoModalAbierto = null;
+    const backdrop = document.getElementById('productModalBackdrop');
+    backdrop.classList.remove('flex');
+    backdrop.classList.add('hidden');
+}
+
+function agregarAlCarrito(id) {
+    const producto = todosLosResultadosActuales.find(item => item.id === String(id));
+    if (!producto) return;
+    const existente = carrito.find(item => item.id === producto.id);
+    if (existente) existente.cantidad += 1;
+    else carrito.push({ ...producto, cantidad: 1 });
+    actualizarCarritoUI();
+    showToast('Añadido al carrito', producto.nombre);
+    toggleCartDrawer(true);
+}
+
+function eliminarDelCarrito(id) {
+    carrito = carrito.filter(item => item.id !== String(id));
+    actualizarCarritoUI();
+}
+
+function cambiarCantidad(id, delta) {
+    const item = carrito.find(i => i.id === String(id));
+    if (!item || !Number.isInteger(delta)) return;
+    item.cantidad += delta;
+    if (item.cantidad <= 0) eliminarDelCarrito(id);
+    else actualizarCarritoUI();
+}
+
+function actualizarCarritoUI() {
+    const totalItems = carrito.reduce((suma, item) => suma + item.cantidad, 0);
+    document.getElementById('headerCartCount').textContent = totalItems;
+    document.getElementById('cartDrawerCount').textContent = `(${totalItems})`;
+    const container = document.getElementById('cartItemsContainer');
+    container.replaceChildren();
+    if (!carrito.length) {
+        container.append(crearElemento('p', 'text-center text-gray-500 mt-10', 'Tu carrito está vacío'));
+    } else {
+        for (const item of carrito) {
+            const fila = crearElemento('div', 'py-3 flex items-center justify-between gap-3');
+            const info = crearElemento('div', 'flex-1 min-w-0');
+            info.append(crearElemento('h4', 'text-xs font-semibold text-white truncate', item.nombre));
+            const precio = precioEnMoneda(item);
+            info.append(crearElemento('p', 'text-xs text-neon-green', `${formatearMonto(precio, monedaActual)} × ${item.cantidad}`));
+            const acciones = crearElemento('div', 'flex items-center gap-2 mt-2');
+            const menos = crearElemento('button', 'w-6 h-6 rounded bg-card-border font-bold hover:bg-neon-green hover:text-black transition-all', '−');
+            menos.type = 'button';
+            menos.setAttribute('aria-label', `Quitar una unidad de ${item.nombre}`);
+            menos.addEventListener('click', () => cambiarCantidad(item.id, -1));
+            const cantidad = crearElemento('span', 'text-xs font-semibold text-white', item.cantidad);
+            const mas = crearElemento('button', 'w-6 h-6 rounded bg-card-border font-bold hover:bg-neon-green hover:text-black transition-all', '+');
+            mas.type = 'button';
+            mas.setAttribute('aria-label', `Agregar una unidad de ${item.nombre}`);
+            mas.addEventListener('click', () => cambiarCantidad(item.id, 1));
+            const eliminar = crearElemento('button', 'text-red-400 text-xs ml-auto hover:underline', 'Eliminar');
+            eliminar.type = 'button';
+            eliminar.addEventListener('click', () => eliminarDelCarrito(item.id));
+            acciones.append(menos, cantidad, mas, eliminar);
+            info.append(acciones);
+            const subtotal = precio === null ? null : Math.round(precio * 100) * item.cantidad / 100;
+            fila.append(info, crearElemento('div', 'font-bold text-sm text-neon-green', formatearMonto(subtotal, monedaActual)));
+            container.append(fila);
+        }
+    }
+    document.getElementById('cartTotal').textContent = formatearMonto(totalCarrito(), monedaActual);
+}
+
+function toggleCartDrawer(abrir) {
+    const panel = document.getElementById('cartDrawerPanel');
+    const backdrop = document.getElementById('cartDrawerBackdrop');
+    if (abrir) {
+        backdrop.classList.remove('hidden');
+        setTimeout(() => panel.classList.remove('translate-x-full'), 10);
+    } else {
+        panel.classList.add('translate-x-full');
+        setTimeout(() => backdrop.classList.add('hidden'), 300);
+    }
+}
 
 function cambiarMoneda(nuevaMoneda) {
+    if (nuevaMoneda !== 'USD' && nuevaMoneda !== 'ARS') return;
     monedaActual = nuevaMoneda;
-    localStorage.setItem('cellzone_moneda', monedaActual);
-    
-    // Actualizar estilo visual de los botones del selector
-    const btnUsd = document.getElementById('btn-usd');
-    const btnArs = document.getElementById('btn-ars');
-    if (btnUsd && btnArs) {
-        if (monedaActual === 'USD') {
-            btnUsd.className = "px-2.5 py-1 rounded-lg text-xs font-extrabold bg-neon-green text-black transition-all";
-            btnArs.className = "px-2.5 py-1 rounded-lg text-xs font-extrabold text-gray-400 hover:text-white transition-all";
-        } else {
-            btnArs.className = "px-2.5 py-1 rounded-lg text-xs font-extrabold bg-neon-green text-black transition-all";
-            btnUsd.className = "px-2.5 py-1 rounded-lg text-xs font-extrabold text-gray-400 hover:text-white transition-all";
-        }
-    }
-
-    if (typeof _ultimosProductos !== 'undefined' && _ultimosProductos.length > 0) {
-        renderizarProductos(_ultimosProductos);
-    }
+    guardarLocal('cellzone_moneda', monedaActual);
+    document.querySelectorAll('[data-currency]').forEach(boton => {
+        const activo = boton.dataset.currency === monedaActual;
+        boton.className = 'px-2 sm:px-2.5 py-1 rounded-lg text-xs font-extrabold transition-all ' +
+            (activo ? 'bg-neon-green text-black' : 'text-gray-400 hover:text-white');
+        boton.setAttribute('aria-pressed', String(activo));
+    });
+    if (yaCargaronProductos) renderizarProductos(productosVisibles);
+    actualizarCarritoUI();
+    if (productoModalAbierto) openProductModal(productoModalAbierto);
 }
 
-function formatearPrecio(p) {
-    const usd = parseFloat(p.precio_usd || p.precio || 0);
-    const ars = parseFloat(p.precio_ars || (usd * 1100)); // fallback estimado si faltara ars
-    if (monedaActual === 'ARS') {
-        return `${formatearAmbosPrecios(p)} ARS`;
-    } else {
-        return `${formatearAmbosPrecios(p)} USD`;
+function checkoutViaWhatsApp() {
+    if (!carrito.length) {
+        showToast('Tu carrito está vacío', 'Agregá productos antes de enviar el pedido.');
+        return;
     }
+    let mensaje = '¡Hola CELLZONE IMPORTADOS! Deseo hacer el siguiente pedido:\n\n';
+    for (const item of carrito) {
+        const precio = formatearMonto(precioEnMoneda(item), monedaActual);
+        mensaje += `- ${item.cantidad} × ${nombreParaMensaje(item.nombre)} (${precio} c/u)\n`;
+    }
+    const total = totalCarrito();
+    mensaje += total === null
+        ? `\n*Total en ${monedaActual}: a confirmar*`
+        : `\n*Total estimado: ${formatearMonto(total, monedaActual)}*`;
+    mensaje += '\n\nPor favor, confirmar precio y disponibilidad.';
+    abrirWhatsApp(mensaje);
 }
 
-function obtenerPrecioNum(p) {
-    const usd = parseFloat(p.precio_usd || p.precio || 0);
-    const ars = parseFloat(p.precio_ars || (usd * 1100));
-    return monedaActual === 'ARS' ? ars : usd;
+function comprarItemWhatsApp(id) {
+    const producto = todosLosResultadosActuales.find(item => item.id === String(id));
+    if (!producto) return;
+    const precio = formatearMonto(precioEnMoneda(producto), monedaActual);
+    const mensaje = `¡Hola CELLZONE! Me interesa este producto:\n\n*${nombreParaMensaje(producto.nombre)}*\nPrecio: ${precio}\n\n¿Tienen stock disponible?`;
+    abrirWhatsApp(mensaje);
 }
 
-
-function formatearAmbosPrecios(p) {
-    const usd = parseFloat(p.precio_usd || p.precio || 0);
-    const ars = parseFloat(p.precio_ars || (usd * 1200));
-    return `<div class="flex flex-col leading-tight">
-        <span class="text-neon-green font-extrabold text-base sm:text-lg">${formatearAmbosPrecios(p)} USD</span>
-        <span class="text-gray-400 text-xs font-semibold">${formatearAmbosPrecios(p)} ARS</span>
-    </div>`;
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', cargarDatosIniciales, { once: true });
+} else {
+    cargarDatosIniciales();
 }

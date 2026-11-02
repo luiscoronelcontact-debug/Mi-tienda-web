@@ -21,26 +21,22 @@
     <!-- Header Principal -->
     <header class="fixed top-0 left-0 right-0 z-50 bg-dark-bg/90 backdrop-blur-md border-b border-card-border">
         <div class="h-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
-            <a onclick="irAInicio()" class="flex items-center gap-3 group" href="#">
-                <div class="w-10 h-10 rounded-xl bg-neon-green flex items-center justify-center text-black font-extrabold shadow-[0_0_15px_rgba(0,255,102,0.5)]">
-                    <span class="material-symbols-outlined text-[24px] font-bold">bolt</span>
-                </div>
-                <div class="flex flex-col">
+            <a onclick="irAInicio(); return false;" class="flex shrink-0 items-center gap-3 group" href="#" aria-label="Volver al inicio de Cellzone">
+                <img src="img/logo.png" alt="Cellzone Logo" class="h-10 w-auto object-contain rounded-xl shadow-[0_0_15px_rgba(0,255,102,0.5)]">
+                <div class="hidden sm:flex flex-col">
                     <span class="text-xl font-extrabold tracking-wider text-white">CELL<span class="text-neon-green">ZONE</span></span>
                     <span class="text-[9px] tracking-widest text-gray-400 uppercase font-semibold">Tucumán & Santiago</span>
                 </div>
             </a>
 
-            <!-- Botones de Google Login y Carrito -->
-            <div class="flex items-center gap-3">
+            <!-- La moneda seleccionada se usa para el carrito y el pedido. -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <div class="flex items-center gap-1 bg-card-bg neon-border p-1 rounded-xl" role="group" aria-label="Moneda del pedido">
+                    <button type="button" id="btn-usd" data-currency="USD" onclick="cambiarMoneda('USD')" aria-pressed="true" class="px-2 sm:px-2.5 py-1 rounded-lg text-xs font-extrabold bg-neon-green text-black transition-all">USD</button>
+                    <button type="button" id="btn-ars" data-currency="ARS" onclick="cambiarMoneda('ARS')" aria-pressed="false" class="px-2 sm:px-2.5 py-1 rounded-lg text-xs font-extrabold text-gray-400 hover:text-white transition-all">ARS</button>
+                </div>
                 <div id="authContainer">
-                    <button 
-        <div class="flex items-center gap-1 bg-card-bg neon-border p-1 rounded-xl">
-            <button id="btn-usd" onclick="cambiarMoneda('USD')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-neon-green text-black transition-all">USD</button>
-            <button id="btn-ars" onclick="cambiarMoneda('ARS')" class="px-2.5 py-1 rounded-lg text-xs font-extrabold text-gray-400 hover:text-white transition-all">ARS</button>
-        </div>
-    
-    <button onclick="loginConGoogle()" class="px-3.5 py-2 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer">
+                    <button type="button" onclick="loginConGoogle()" class="px-3.5 py-2 rounded-xl bg-card-bg neon-border hover:border-neon-green text-white text-xs font-bold transition-all flex items-center gap-2 cursor-pointer" aria-label="Ingresar con Google">
                         <span class="material-symbols-outlined text-[18px] text-neon-green">account_circle</span>
                         <span class="hidden sm:inline">Ingresar con Google</span>
                     </button>
@@ -78,7 +74,7 @@
                     <a href="#catalogoSeccion" class="px-6 py-3.5 rounded-xl bg-neon-green text-black font-extrabold text-sm hover:brightness-110 shadow-[0_0_20px_rgba(0,255,102,0.4)] transition-all flex items-center gap-2">
                         Ver productos <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                     </a>
-                    <a href="https://wa.me/595995677862" target="_blank" class="px-6 py-3.5 rounded-xl bg-card-bg neon-border text-white font-bold text-sm hover:border-neon-green transition-all flex items-center gap-2">
+                    <a href="https://wa.me/595995677862" target="_blank" rel="noopener noreferrer" class="px-6 py-3.5 rounded-xl bg-card-bg neon-border text-white font-bold text-sm hover:border-neon-green transition-all flex items-center gap-2">
                         <span class="material-symbols-outlined text-[18px] text-neon-green">chat</span> WhatsApp
                     </a>
                 </div>
@@ -90,4 +86,186 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-3 gap-4 text-center">
                 <div>
                     <p id="statProductos" class="text-lg sm:text-2xl font-extrabold text-white">24.022</p>
-                    <p class="t
+                    <p class="text-[11px] sm:text-xs text-gray-400 uppercase font-mono">Productos</p>
+                </div>
+                <div>
+                    <p id="statCategorias" class="text-lg sm:text-2xl font-extrabold text-neon-green">35</p>
+                    <p class="text-[11px] sm:text-xs text-gray-400 uppercase font-mono">Categorías</p>
+                </div>
+                <div>
+                    <p class="text-lg sm:text-2xl font-extrabold text-white flex items-center justify-center gap-1">★ 4.9</p>
+                    <p class="text-[11px] sm:text-xs text-gray-400 uppercase font-mono">Clientes Felices</p>
+                </div>
+            </div>
+        </section>
+
+        <div id="catalogoSeccion" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            
+            <!-- Buscador y Filtros -->
+            <div class="flex flex-col md:flex-row items-center gap-4">
+                <div class="relative w-full flex-1">
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-[20px]">search</span>
+                    <input id="buscador" oninput="buscarProductosServidor()" class="w-full h-12 pl-12 pr-4 rounded-xl bg-card-bg neon-border text-white placeholder:text-gray-500 text-sm focus:outline-none focus:border-neon-green transition-all" placeholder="Buscar entre los 24 mil productos (ej. iPhone, JBL, Lattafa)..." type="text"/>
+                </div>
+                <div class="w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+                    <div id="categorias-container" class="flex items-center gap-2 flex-nowrap">
+                        <button class="cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-neon-green text-black shadow-sm" onclick="filtrarCategoria('TODOS', this)">TODOS</button>
+                        <button class="cat-pill shrink-0 px-4 py-2.5 rounded-xl text-xs font-bold transition-all bg-card-bg text-gray-300 hover:text-white neon-border text-neon-green flex items-center gap-1" onclick="filtrarCategoria('FAVORITOS', this)">
+                            <span class="material-symbols-outlined text-[16px]">favorite</span> Favoritos (<span id="favCountBadge">0</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-gray-400 px-1 font-mono">
+                <span id="productCounter">Buscando en catálogo completo...</span>
+                
+            </div>
+
+            <!-- Cuadrícula Principal de Productos -->
+            <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                <div class="col-span-full text-center py-20 text-gray-400">Cargando productos...</div>
+            </div>
+
+            <!-- Callout de WhatsApp inferior -->
+            <div class="my-16 bg-gradient-to-r from-card-bg via-[#0d1b12] to-card-bg neon-border rounded-2xl p-8 text-center space-y-4">
+                <h3 class="text-xl sm:text-2xl font-extrabold text-white">¿No encontrás lo que buscás?</h3>
+                <p class="text-xs sm:text-sm text-gray-300 max-w-md mx-auto">Escribinos por WhatsApp y te ayudamos a conseguirlo directamente desde Paraguay al mejor precio.</p>
+                <a href="https://wa.me/595995677862" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-neon-green text-black font-extrabold text-sm hover:brightness-110 shadow-[0_0_15px_rgba(0,255,102,0.4)] transition-all">
+                    <span class="material-symbols-outlined text-[20px]">chat</span> Hablar ahora
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Detalle Producto -->
+    <div id="productModalBackdrop" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden items-center justify-center p-3 sm:p-6">
+        <div id="productModalDialog" class="bg-card-bg neon-border rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative p-6 shadow-2xl">
+            <button onclick="closeProductModal()" class="absolute top-4 right-4 z-20 w-9 h-9 rounded-full bg-card-border hover:bg-neon-green hover:text-black flex items-center justify-center text-white transition-all cursor-pointer font-bold">✕</button>
+            <div id="modalContentContainer"></div>
+        </div>
+    </div>
+
+    <!-- Carrito Drawer -->
+    <div id="cartDrawerBackdrop" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden">
+        <div id="cartDrawerPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-card-bg border-l border-card-border shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300">
+            <div class="p-5 bg-black/40 flex items-center justify-between border-b border-card-border">
+                <h3 class="font-extrabold text-lg text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-neon-green">shopping_bag</span> Tu Carrito <span id="cartDrawerCount" class="text-xs text-gray-400 font-normal">(0)</span>
+                </h3>
+                <button onclick="toggleCartDrawer(false)" class="w-9 h-9 rounded-full bg-card-border hover:bg-neon-green hover:text-black flex items-center justify-center text-white transition-all cursor-pointer">✕</button>
+            </div>
+            <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-4 divide-y divide-card-border space-y-3">
+                <p class="text-center text-gray-500 mt-10">Tu carrito está vacío</p>
+            </div>
+            <div class="p-5 bg-black/40 border-t border-card-border space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                    <span class="text-xs text-gray-300">Moneda del pedido:</span>
+                    <div class="flex items-center gap-1 bg-card-bg neon-border p-1 rounded-xl" role="group" aria-label="Moneda del pedido en el carrito">
+                        <button type="button" data-currency="USD" onclick="cambiarMoneda('USD')" aria-pressed="true">USD</button>
+                        <button type="button" data-currency="ARS" onclick="cambiarMoneda('ARS')" aria-pressed="false">ARS</button>
+                    </div>
+                </div>
+                <div class="flex justify-between items-baseline font-bold text-lg">
+                    <span class="text-gray-300">Total a Pagar:</span>
+                    <span id="cartTotal" class="text-neon-green text-xl">USD 0,00</span>
+                </div>
+                <button onclick="checkoutViaWhatsApp()" class="w-full py-4 rounded-xl bg-neon-green hover:brightness-110 text-black font-extrabold shadow-[0_0_20px_rgba(0,255,102,0.4)] flex items-center justify-center gap-2 cursor-pointer transition-all">
+                    <span class="material-symbols-outlined text-[22px]">chat</span>
+                    <span>FINALIZAR PEDIDO VÍA WHATSAPP</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-6 left-6 z-50 bg-card-bg neon-border text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="w-7 h-7 rounded-lg bg-neon-green text-black font-extrabold flex items-center justify-center">✓</div>
+        <div class="text-xs">
+            <p id="toastTitle" class="font-bold text-neon-green">Aviso</p>
+            <p id="toastSubtitle" class="text-gray-300">Acción completada</p>
+        </div>
+    </div>
+
+    <!-- Script Principal con Google Auth y Favoritos -->
+    
+
+    <!-- Vista de Perfil Oculta por defecto -->
+        <!-- Vista de Perfil Estilizada -->
+        <!-- Vista de Perfil Estilizada -->
+    <div id="vistaPerfil" class="hidden max-w-2xl mx-auto p-4 pt-24 mb-12 text-white">
+        <button onclick="irAInicio()" class="px-4 py-2.5 bg-card-bg neon-border rounded-xl text-neon-green hover:bg-neon-green hover:text-black transition-all mb-6 flex items-center gap-2 cursor-pointer font-bold text-xs shadow-lg">
+            <span class="material-symbols-outlined text-[18px]">arrow_back</span> Volver a la tienda
+        </button>
+
+        <!-- Tarjeta de Usuario -->
+        <div class="bg-card-bg neon-border rounded-2xl p-6 mb-6 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+            <div id="perfilAvatarContainer">
+                <img id="perfilImgAvatar" src="" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-neon-green hidden">
+                <div id="perfilInitAvatar" class="w-20 h-20 rounded-full bg-neon-green text-black font-bold text-2xl flex items-center justify-center border-2 border-neon-green hidden"></div>
+            </div>
+            <div class="flex-1">
+                <h2 id="perfilNombreTxt" class="text-xl font-bold text-white"></h2>
+                <p id="perfilEmailTxt" class="text-xs text-gray-400 mt-1"></p>
+                <button onclick="toggleEditarPerfil()" class="mt-3 px-4 py-2 bg-neon-green/10 border border-neon-green text-neon-green rounded-xl text-xs font-bold hover:bg-neon-green hover:text-black transition-all flex items-center gap-1.5 mx-auto sm:mx-0 cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">edit</span> Editar perfil
+                </button>
+            </div>
+        </div>
+
+        <!-- Sección Mis Pedidos -->
+        <div class="bg-card-bg neon-border rounded-2xl p-6 mb-6">
+            <h3 class="text-base font-bold text-white flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-neon-green">package</span> Mis pedidos
+            </h3>
+            <div class="text-center py-8 text-gray-400 border border-dashed border-gray-800 rounded-xl">
+                <span class="material-symbols-outlined text-[36px] text-gray-600 mb-2">inventory_2</span>
+                <p class="text-sm">Todavía no tenés pedidos.</p>
+            </div>
+        </div>
+
+        <!-- Formulario de Edición (Oculto por defecto) -->
+        <div id="seccionEditarPerfil" class="hidden bg-card-bg neon-border rounded-2xl p-6">
+            <h3 class="text-base font-bold text-neon-green mb-4">Actualizar tus datos</h3>
+            <form onsubmit="guardarPerfil(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Nombre completo</label>
+                    <input type="text" id="profFullName" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Teléfono</label>
+                    <input type="text" id="profPhone" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Provincia</label>
+                    <input type="text" id="profProvince" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Ciudad</label>
+                    <input type="text" id="profCity" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-300 mb-1">Dirección</label>
+                    <input type="text" id="profAddress" class="w-full p-2.5 bg-black/50 border border-gray-700 rounded-xl text-white text-sm focus:border-neon-green outline-none" />
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" id="btnGuardarPerfil" class="flex-1 bg-neon-green text-black font-bold p-2.5 rounded-xl hover:opacity-90 transition-all cursor-pointer text-sm">
+                        Guardar cambios
+                    </button>
+                    <button type="button" onclick="toggleEditarPerfil()" class="px-4 py-2.5 bg-gray-800 text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-700 cursor-pointer">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    
+
+<!-- PARCHE FORZADO DE NAVEGACION Y SESION -->
+
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/store.js"></script>
+</body>
+</html>
