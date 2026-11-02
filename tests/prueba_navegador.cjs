@@ -57,7 +57,7 @@ function testServer() {
     if (!(file === root || file.startsWith(root + path.sep))) { res.writeHead(403).end(); return; }
     fs.readFile(file, (err, bytes) => {
       if (err) { res.writeHead(404).end(); return; }
-      const type = ({ '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png' })[path.extname(file)] || 'application/octet-stream';
+      const type = ({ '.html': 'text/html; charset=utf-8', '.js': 'application/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.webm': 'video/webm' })[path.extname(file)] || 'application/octet-stream';
       res.writeHead(200, { 'Content-Type': type }).end(bytes);
     });
   });
@@ -113,10 +113,37 @@ async function main() {
     return route.abort();
   });
   const page = await context.newPage();
+  const pedidosVideo = [];
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (url.origin === origin && url.pathname.startsWith('/media/')) pedidosVideo.push(url.pathname);
+  });
   page.on('pageerror', error => pageErrors.push(error.message));
   const step = text => console.log('OK:', text);
   try {
     await page.goto(origin + '/', { waitUntil: 'networkidle' });
+    assert.equal(await page.locator('#bienvenida').evaluate(el => el.open), true, 'La primera visita abre la bienvenida.');
+    await page.waitForFunction(() => {
+      const v = document.getElementById('bienvenida-video');
+      return v.readyState >= 2 && v.videoWidth === 720 && v.currentTime > 0.08;
+    }, null, { timeout: 15000 });
+    assert.equal(await page.locator('#bienvenida-video').evaluate(v => v.muted), true);
+    assert.ok(pedidosVideo.length > 0);
+    for (const viewport of [{ width: 320, height: 700 }, { width: 375, height: 812 }, { width: 1280, height: 900 }]) {
+      await page.setViewportSize(viewport);
+      const rect = await page.getByRole('button', { name: 'Entrar a la tienda' }).boundingBox();
+      assert.ok(rect && rect.x >= 0 && rect.x + rect.width <= viewport.width && rect.y >= 0 && rect.y + rect.height <= viewport.height);
+    }
+    await page.getByRole('button', { name: 'Activar sonido' }).click();
+    assert.equal(await page.locator('#bienvenida-sonido').getAttribute('aria-pressed'), 'true');
+    await page.getByRole('button', { name: 'Silenciar' }).click();
+    await page.getByRole('button', { name: 'Entrar a la tienda' }).click();
+    assert.equal(await page.evaluate(() => localStorage.getItem('cellzone_bienvenida_v1')), '1');
+    pedidosVideo.length = 0;
+    await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(await page.locator('#bienvenida').evaluate(el => el.open), false, 'La segunda visita entra directamente.');
+    assert.equal(pedidosVideo.length, 0, 'La segunda visita no descarga el video.');
+    step('Bienvenida con video, acceso, sonido optativo y recuerdo; sin afectar la tienda.');
     await page.waitForSelector('#productGrid article');
     assert.equal(await page.locator('#productGrid article').count(), 4);
     assert.equal(await page.locator('#authContainer #btn-usd').count(), 0);
@@ -250,6 +277,24 @@ async function main() {
     assert.match(await page.locator('#app img').getAttribute('src'), /^data:image\/svg\+xml/);
     assert.equal(await page.evaluate(() => window.__xss || 0), 0);
     step('Detalle independiente muestra ambos precios, conserva la moneda y protege datos hostiles.');
+
+    await page.goto(origin + '/', { waitUntil: 'networkidle' });
+    await page.evaluate(() => localStorage.removeItem('cellzone_bienvenida_v1'));
+    await context.route(origin + '/media/**', route => route.abort());
+    await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(await page.locator('#bienvenida').evaluate(el => el.open), true);
+    await page.getByRole('button', { name: 'Entrar a la tienda' }).click();
+    assert.equal(await page.locator('#bienvenida').evaluate(el => el.open), false, 'Puede entrar aunque falle el video.');
+    await page.evaluate(() => localStorage.removeItem('cellzone_bienvenida_v1'));
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    pedidosVideo.length = 0;
+    await page.reload({ waitUntil: 'networkidle' });
+    assert.equal(await page.locator('#bienvenida-video').evaluate(v => v.paused), true);
+    assert.equal(pedidosVideo.length, 0, 'Movimiento reducido: no se descarga video automáticamente.');
+    await page.keyboard.press('Escape');
+    assert.equal(await page.locator('#bienvenida').evaluate(el => el.open), false);
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    step('Fallo del video, movimiento reducido y Escape no impiden entrar.');
 
     failCatalog = true;
     await page.goto(origin + '/', { waitUntil: 'networkidle' });

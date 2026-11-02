@@ -1,0 +1,130 @@
+/* Bienvenida aislada: no modifica las reglas del catálogo. */
+body.bienvenida-abierta { overflow: hidden; }
+.bienvenida:not([open]) { display: none; }
+.bienvenida[open] {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+    overflow: auto;
+    border: 0;
+    color: #f5faf6;
+    background: radial-gradient(ellipse at 78% 45%, #0a2412 0%, #040d08 32%, #030705 68%);
+    font-family: Inter, system-ui, sans-serif;
+    z-index: 2147483647;
+}
+.bienvenida::backdrop { background: #030705; }
+.bienvenida-contenido {
+    width: min(100%, 1050px);
+    min-height: 100%;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 408px);
+    align-items: center;
+    gap: clamp(28px, 6vw, 96px);
+}
+.bienvenida-texto { max-width: 530px; }
+.bienvenida-etiqueta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 22px;
+    color: #96eaa9;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .2em;
+}
+.bienvenida-etiqueta span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #66ff78;
+    box-shadow: 0 0 14px #45ff6d;
+}
+.bienvenida h1 {
+    margin: 0;
+    color: #f5faf6;
+    font-size: clamp(38px, 5vw, 67px);
+    font-weight: 800;
+    letter-spacing: -.055em;
+    line-height: 1.05;
+}
+.bienvenida h1 strong { color: #69fa78; font-weight: 800; }
+.bienvenida-descripcion {
+    margin: 22px 0 30px;
+    color: #b1c3b6;
+    font-size: clamp(15px, 1.4vw, 18px);
+    line-height: 1.55;
+}
+.bienvenida-entrar {
+    display: inline-flex;
+    min-height: 54px;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 0 25px;
+    border: 0;
+    border-radius: 13px;
+    background: #71ff80;
+    color: #07120a;
+    font-size: 15px;
+    font-weight: 800;
+    box-shadow: 0 9px 32px rgba(47, 255, 104, .22);
+    cursor: pointer;
+    transition: background .2s ease, transform .2s ease;
+}
+.bienvenida-entrar:hover { background: #9aff9f; transform: translateY(-2px); }
+.bienvenida-entrar:focus-visible, .bienvenida-sonido:focus-visible { outline: 3px solid #fff; outline-offset: 4px; }
+.bienvenida-sonido {
+    display: flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #a8c8ae;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.bienvenida-sonido:hover { color: #e8fff0; }
+.bienvenida-nota { margin: 7px 0 0; color: #8a9e90; font-size: 12px; line-height: 1.4; }
+.bienvenida-marco {
+    width: min(100%, 43.875vh, 408px);
+    justify-self: center;
+    aspect-ratio: 9 / 16;
+    overflow: hidden;
+    border: 1px solid rgba(117, 255, 145, .22);
+    border-radius: 22px;
+    background: #020604;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, .5), 0 0 48px rgba(30, 245, 90, .08);
+}
+.bienvenida-video { display: block; width: 100%; height: 100%; object-fit: contain; background: #020604; }
+@media (max-width: 700px) {
+    .bienvenida[open] { padding: max(18px, env(safe-area-inset-top)) 18px max(18px, env(safe-area-inset-bottom)); }
+    .bienvenida-contenido { grid-template-columns: 1fr; align-content: center; justify-items: center; gap: 15px; }
+    .bienvenida-marco { order: -1; width: auto; height: min(51vh, 410px); max-width: 100%; border-radius: 17px; }
+    .bienvenida-texto { width: 100%; text-align: center; }
+    .bienvenida-etiqueta { justify-content: center; margin-bottom: 9px; font-size: 9px; }
+    .bienvenida h1 { font-size: clamp(29px, 9vw, 38px); }
+    .bienvenida h1 br { display: none; }
+    .bienvenida-descripcion { margin: 8px 0 14px; font-size: 14px; }
+    .bienvenida-entrar { min-height: 50px; width: min(100%, 292px); }
+    .bienvenida-sonido { justify-content: center; margin: 5px auto 0; }
+    .bienvenida-nota { margin-top: 0; font-size: 11px; }
+}
+@media (max-height: 620px) and (max-width: 700px) {
+    .bienvenida-marco { height: 42vh; }
+    .bienvenida-contenido { gap: 9px; }
+    .bienvenida-etiqueta, .bienvenida-nota { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .bienvenida-entrar { transition: none; }
+    .bienvenida-entrar:hover { transform: none; }
+}
